@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tuberbot
+      POSTGRES_USER: tuberbot
+      POSTGRES_PASSWORD: tuberbot
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tuberbot -d tuberbot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - tuberbot-postgres:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: tuberbot-local
+      MINIO_ROOT_PASSWORD: tuberbot-local-change-me
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - tuberbot-minio:/data
+
+volumes:
+  tuberbot-postgres:
+  tuberbot-minio:

@@ -1,0 +1,33 @@
+# dependencies and builds
+node_modules/
+.next/
+dist/
+.vinext/
+.wrangler/
+coverage/
+playwright-report/
+test-results/
+work/
+outputs/
+*.tsbuildinfo
+
+# secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+
+# local databases and uploads
+.pglite/
+_tmp/
+output/
+_artifacts/
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
