@@ -25,7 +25,7 @@ export const publicSitePages: Readonly<Record<string, SitePage>> = {
       { title: "03 · 제작과 검수", body: "제출물 버전, 수정 요청, 최종 승인과 게시 증빙을 주문 기록에 남깁니다.", items: ["버전별 파일과 의견", "광고 표시 체크리스트"] },
       { title: "04 · 확정과 정산", body: "구매 확정 후 수수료 스냅샷과 복식 원장을 기준으로 지급 가능액을 계산합니다.", items: ["분쟁 중 지급 차단", "판매자 검증 전 지급 차단"] },
     ],
-    primaryAction: { label: "광고 상품 찾기", href: "/market" },
+    primaryAction: { label: "거래 흐름 직접 체험", href: "/deal-demo" },
   },
   safety: {
     title: "보호를 과장하지 않고, 거래 사실을 남깁니다.",
@@ -81,7 +81,7 @@ export const publicSitePages: Readonly<Record<string, SitePage>> = {
       { title: "고객사 분리", body: "캠페인·주문·성과 데이터는 조직 범위를 벗어나 조회할 수 없도록 설계합니다." },
       { title: "운영 지원", body: "매니지드 캠페인과 대행사 요금제는 후속 기능이며 현재는 신청 대기 상태입니다." },
     ],
-    primaryAction: { label: "거래 흐름 미리보기", href: "/how-it-works" },
+    primaryAction: { label: "거래 흐름 직접 체험", href: "/deal-demo" },
   },
   help: {
     title: "거래 단계별 도움을 확인하세요.",

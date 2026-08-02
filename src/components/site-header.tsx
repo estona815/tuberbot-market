@@ -6,10 +6,10 @@ import { Brand } from "@/components/brand";
 import { CloseIcon, MenuIcon } from "@/components/icons";
 
 const links = [
+  ["유튜버 찾기", "/search"],
   ["광고 상품", "/market"],
   ["캠페인", "/campaigns"],
-  ["이용 방법", "/how-it-works"],
-  ["안전 가이드", "/safety"],
+  ["거래 데모", "/deal-demo"],
 ] as const;
 
 export function SiteHeader() {
@@ -20,10 +20,10 @@ export function SiteHeader() {
         <Brand />
         <nav className="desktop-nav" aria-label="주요 메뉴">
           {links.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
-          <Link className="button button--quiet button--small" href="/how-it-works">제품 안내</Link>
+          <Link className="button button--small" href="/for-creators">유튜버로 입점</Link>
         </nav>
         <div className="mobile-nav__actions">
-          <Link href="/how-it-works">제품 안내</Link>
+          <Link href="/for-creators">유튜버로 입점</Link>
           <button
             aria-expanded={open}
             aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
@@ -40,7 +40,8 @@ export function SiteHeader() {
           {links.map(([label, href]) => (
             <Link href={href} key={href} onClick={() => setOpen(false)}>{label}</Link>
           ))}
-          <Link href="/for-creators" onClick={() => setOpen(false)}>유튜버 화면 미리보기</Link>
+          <Link href="/how-it-works" onClick={() => setOpen(false)}>이용 방법</Link>
+          <Link href="/safety" onClick={() => setOpen(false)}>거래 안전 가이드</Link>
         </nav>
       ) : null}
     </header>

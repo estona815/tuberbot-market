@@ -1,0 +1,135 @@
+.searchSummary {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.tableViewport {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.table {
+  border-collapse: collapse;
+  min-width: 880px;
+  width: 100%;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table thead th {
+  border-top: 1px solid var(--ink);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 82px;
+}
+
+.table tbody tr:hover {
+  background: var(--surface);
+}
+
+.channelLink {
+  display: grid;
+  gap: 5px;
+}
+
+.channelLink span,
+.sourceNote,
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.price {
+  display: grid;
+  gap: 5px;
+}
+
+.price strong {
+  white-space: nowrap;
+}
+
+.empty {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  padding: 56px 20px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .tableViewport {
+    margin-inline: 0;
+    overflow: visible;
+  }
+
+  .table {
+    display: block;
+    min-width: 0;
+  }
+
+  .table thead {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .table tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  .table tbody tr {
+    background: var(--white);
+    border: 1px solid var(--line);
+    display: grid;
+    padding: 0 16px;
+  }
+
+  .table th,
+  .table td {
+    align-items: start;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 96px minmax(0, 1fr);
+    padding: 14px 0;
+    word-break: break-word;
+  }
+
+  .table td:last-child {
+    border-bottom: 0;
+  }
+
+  .table th::before,
+  .table td::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.45;
+  }
+
+  .channelLink {
+    min-width: 0;
+  }
+
+  .channelLink span {
+    overflow-wrap: anywhere;
+  }
+}

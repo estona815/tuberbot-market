@@ -2,12 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookmarkIcon, ShieldIcon } from "@/components/icons";
+import { LegacyCreatorProfile } from "@/components/legacy-creator-profile";
 import { PackageMedia } from "@/components/package-media";
 import { StatusLabel } from "@/components/status-label";
+import { getLegacyCreatorBySlug } from "@/lib/creator-data";
 import { formatKrw, marketplacePackages } from "@/lib/market-data";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const legacyCreator = getLegacyCreatorBySlug(slug);
+  if (legacyCreator) {
+    return {
+      title: `${legacyCreator.name} 레거시 프로필`,
+      description: "기존 튜버봇 공개 화면에서 보존한 탐색 전용 프로필입니다.",
+      alternates: { canonical: `/channel/${legacyCreator.legacyId}` },
+      robots: { index: false, follow: false },
+    };
+  }
   const item = marketplacePackages.find((entry) => entry.creatorSlug === slug);
   return item
     ? {
@@ -21,6 +32,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CreatorProfilePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const legacyCreator = getLegacyCreatorBySlug(slug);
+  if (legacyCreator) return <LegacyCreatorProfile creator={legacyCreator} />;
+
   const item = marketplacePackages.find((entry) => entry.creatorSlug === slug);
   if (!item) notFound();
   return (
@@ -28,7 +42,7 @@ export default async function CreatorProfilePage({ params }: { params: Promise<{
       <section className="creator-profile__hero">
         <div className="creator-avatar">{item.creatorName.slice(0, 1)}</div>
         <div><h1>{item.creatorName}</h1><p>{item.category} 샘플 프로필</p><div className="status-row"><StatusLabel tone="info">제품 프리뷰</StatusLabel><StatusLabel tone="warning">미인증 · 거래 불가</StatusLabel></div></div>
-        <div className="creator-profile__actions"><button className="button" disabled type="button">광고 제안 준비 중</button><button className="button button--quiet" disabled type="button">찜 기능 준비 중</button></div>
+        <div className="creator-profile__actions"><Link className="button" href="/deal-demo">거래 흐름 데모</Link><button className="button button--quiet" disabled type="button">찜 기능 준비 중</button></div>
       </section>
       <section className="trust-facts" aria-label="샘플 프로필 상태"><div><strong>응답 시간</strong><span>실데이터 없음</span></div><div><strong>거래 완료</strong><span>실데이터 없음</span></div><div><strong>후기</strong><span>기능 준비 중</span></div><div><strong>최근 활동</strong><span>실데이터 연결 전</span></div></section>
       <section className="creator-profile__packages"><h2>샘플 광고 상품 구성</h2><Link className="package-card" href={`/packages/${item.id}`}><PackageMedia item={item} priority /><div className="package-card__content"><span className="package-card__creator">샘플 프로필 · {item.creatorName}</span><h3>{item.title}</h3><span className="package-card__meta">샘플 조건 · {item.leadTimeDays}일 · 수정 {item.revisionCount}회</span><span className="package-card__price">예시 {formatKrw(item.priceKrw)}<BookmarkIcon size={18} /></span></div></Link></section>

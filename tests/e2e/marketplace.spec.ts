@@ -36,7 +36,7 @@ test("authenticated order workspace records an approval and a message", async ({
 });
 
 test("public and local-only route inventory follows the preview access policy", async ({ request }) => {
-  const publicRoutes = ["/", "/market", "/creators", "/creators/haru-store", "/packages/pkg_shorts_intro", "/campaigns", "/campaigns/cmp_lifestyle_launch", "/categories/lifestyle", "/how-it-works", "/safety", "/pricing", "/for-creators", "/for-advertisers", "/for-agencies", "/help", "/legal/terms", "/legal/marketplace", "/legal/privacy", "/legal/refunds", "/legal/prohibited-content", "/legal/reviews", "/legal/safe-payment"];
+  const publicRoutes = ["/", "/search", "/channel/0GsrcFYGfeAY5SNOtfgz", "/deal-demo", "/market", "/creators", "/creators/haru-store", "/packages/pkg_shorts_intro", "/campaigns", "/campaigns/cmp_lifestyle_launch", "/categories/lifestyle", "/how-it-works", "/safety", "/pricing", "/for-creators", "/for-advertisers", "/for-agencies", "/help", "/legal/terms", "/legal/marketplace", "/legal/privacy", "/legal/refunds", "/legal/prohibited-content", "/legal/reviews", "/legal/safe-payment"];
   const localOnlyRoutes = ["/login", "/signup", "/onboarding", "/onboarding/creator", "/onboarding/advertiser", "/verification/channel", "/verification/seller", "/verification/business", "/dashboard", "/dashboard/creator/packages", "/dashboard/advertiser/campaigns", "/dashboard/agency", "/orders/TBM-20260802-001", "/orders/TBM-20260802-001/contract", "/orders/TBM-20260802-001/deliverables", "/orders/TBM-20260802-001/payment", "/orders/TBM-20260802-001/dispute", "/messages", "/licenses", "/reviews", "/notifications", "/settings/security", "/admin/reconciliation", "/admin/audit"];
   for (const route of [...publicRoutes, ...localOnlyRoutes]) {
     const response = await request.get(route);
@@ -50,6 +50,42 @@ test("public and local-only route inventory follows the preview access policy", 
   const admin = await request.get("/admin");
   expect(admin.status()).toBe(404);
   expect(await admin.text()).not.toContain("시스템 상태");
+
+  const unknownLegacyCreator = await request.get("/channel/not-a-preserved-id");
+  expect(unknownLegacyCreator.status()).toBe(404);
+});
+
+test("public deal demo completes proposal, sandbox payment, review, and payout block", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "full public demo flow runs once");
+  await page.goto("/deal-demo");
+  await expect(page.getByRole("heading", { name: /안전 거래 흐름 데모/ })).toBeVisible();
+
+  for (const buttonName of [
+    "광고주 제안 v1 보내기",
+    "크리에이터 역제안 v2 보내기",
+    "광고주가 v2 수락",
+    "크리에이터가 v2 수락",
+  ]) {
+    await page.getByRole("button", { name: buttonName }).click();
+  }
+
+  await page.getByRole("radio", { name: "Toss Pay" }).check();
+  await page.getByRole("button", { name: "실제 청구 없이 샌드박스 확인" }).click();
+
+  for (const buttonName of [
+    "초안 v1 제출",
+    "계약 범위 안에서 수정 요청",
+    "수정본 v2 재제출",
+    "광고주 최종 승인",
+    "게시 완료 기록",
+    "광고주 구매 확정",
+  ]) {
+    await page.getByRole("button", { name: buttonName }).click();
+  }
+
+  await expect(page.getByRole("heading", { name: "라이브 정산 비활성화" })).toBeVisible();
+  await expect(page.getByText(/정산 예약·송금을 실행할 수 없습니다/)).toBeVisible();
+  await expect(page.getByLabel("거래 이벤트 기록").getByRole("listitem")).toHaveCount(12);
 });
 
 test("health endpoint fails closed for live payment", async ({ request }) => {
@@ -66,10 +102,14 @@ test("health endpoint fails closed for live payment", async ({ request }) => {
 test("390px layout has no horizontal page overflow and mobile menu works", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only layout assertion");
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /유튜브 광고/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /유튜버를 찾고/ })).toBeVisible();
   await page.getByRole("button", { name: "메뉴 열기" }).click();
   await expect(page.getByRole("navigation", { name: "모바일 메뉴" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.goto("/market");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.goto("/search");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.goto("/deal-demo");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

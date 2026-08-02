@@ -9,6 +9,22 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function MarketPage() {
-  return <MarketExplorer items={marketplacePackages} />;
+type MarketSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function MarketPage({ searchParams }: { searchParams: MarketSearchParams }) {
+  const params = await searchParams;
+  const category = first(params.category);
+  const format = first(params.format);
+  return (
+    <MarketExplorer
+      initialCategory={["라이프스타일", "IT·테크", "뷰티"].includes(category ?? "") ? category : "전체"}
+      initialFormat={["SHORTS", "LONGFORM_INTEGRATION", "UGC"].includes(format ?? "") ? format : "전체"}
+      initialQuery={first(params.q) ?? ""}
+      items={marketplacePackages}
+    />
+  );
 }

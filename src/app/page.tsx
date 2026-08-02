@@ -1,98 +1,128 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowIcon, BookmarkIcon, ContractIcon, LockIcon, MessageIcon, SearchIcon, ShieldIcon, UploadIcon } from "@/components/icons";
-import { PackageMedia } from "@/components/package-media";
-import { formatKrw, marketplacePackages } from "@/lib/market-data";
+import {
+  ArrowIcon,
+  ContractIcon,
+  LockIcon,
+  MessageIcon,
+  SearchIcon,
+  ShieldIcon,
+  UploadIcon,
+} from "@/components/icons";
+import {
+  featuredLegacyCreators,
+  formatCreatorCount,
+  formatLegacyKrw,
+} from "@/lib/creator-data";
 
-const progress = ["제안", "계약", "샌드박스 결제", "제작", "승인"];
+const dealStages = [
+  { label: "제안", detail: "광고주가 금액·납기·사용권을 제안합니다.", icon: MessageIcon },
+  { label: "역제안", detail: "유튜버가 같은 항목으로 조건을 답합니다.", icon: ArrowIcon },
+  { label: "계약", detail: "양측이 동일한 버전을 각각 수락합니다.", icon: ContractIcon },
+  { label: "샌드박스 결제", detail: "외부 PG 승인 전에는 실제 청구가 없습니다.", icon: LockIcon },
+  { label: "제작·검수", detail: "초안, 수정, 승인과 게시 기록을 남깁니다.", icon: UploadIcon },
+] as const;
 
 export default function HomePage() {
   return (
     <>
-      <section className="home-hero">
-        <div className="home-hero__copy">
-          <h1>유튜브 광고 거래 흐름을, 검색부터 콘텐츠 검수까지 미리보기.</h1>
-          <p className="home-hero__lead">샘플 데이터로 채널 탐색, 조건 협상, 계약 기록과 콘텐츠 검수 화면을 확인하세요.</p>
-          <div className="home-hero__actions">
-            <Link className="button" href="/market">상품 화면 미리보기</Link>
-            <Link className="button button--secondary" href="/campaigns/new">캠페인 화면 미리보기</Link>
-          </div>
-          <Link className="creator-link" href="/for-creators">
-            <span>유튜버 화면 미리보기</span><ArrowIcon />
-          </Link>
-          <p className="protection-note"><ShieldIcon /> 샘플 데이터 기반 제품 프리뷰 · 실제 거래 불가</p>
-        </div>
+      <section className="home-v2">
+        <div className="home-v2__copy">
+          <p className="home-v2__eyebrow">CREATOR COMMERCE · KOREA</p>
+          <h1>유튜버를 찾고,<br />조건을 합의하고,<br />제작까지 한곳에서.</h1>
+          <p className="home-v2__lead">
+            원래 튜버봇의 채널 탐색은 그대로 살리고, 제안·역제안·계약·콘텐츠 검수를 하나의 기록으로 연결했습니다.
+          </p>
 
-        <div className="proposal-preview" aria-label="구조화된 광고 제안 미리보기">
-          <div className="proposal-preview__progress">
-            {progress.map((step, index) => (
-              <div className={`progress-step ${index === 0 ? "is-active" : ""}`} key={step}>
-                <span className="progress-step__dot">{index + 1}</span><span>{step}</span>
-              </div>
-            ))}
-          </div>
-          <div className="proposal-preview__body">
-            <div className="proposal-list">
-              <div className="proposal-list__head"><span>제안 목록</span><small>내 제안</small></div>
-              {marketplacePackages.map((item, index) => (
-                <div className={`proposal-choice ${index === 0 ? "is-selected" : ""}`} key={item.id}>
-                  <div><strong>{item.title}</strong><small>샘플 프로필 · {item.category}</small><b>예시 {formatKrw(item.priceKrw)}</b></div>
-                  <BookmarkIcon size={16} />
-                </div>
-              ))}
-            </div>
-            <div className="proposal-detail">
-              <div className="proposal-detail__head"><h2>15초 Shorts 제품 소개</h2><BookmarkIcon /></div>
-              <dl className="detail-list">
-                <dt>채널명</dt><dd>하루상점</dd>
-                <dt>광고 형식</dt><dd>YouTube Shorts · 15초 이내</dd>
-                <dt>제공 내역</dt><dd>스크립트 기획, 촬영, 편집</dd>
-                <dt>납기</dt><dd>계약 후 5일 이내</dd>
-                <dt>수정 제공</dt><dd>1회</dd>
-                <dt>사용권</dt><dd>유튜버 채널 게시</dd>
-              </dl>
-              <div className="proposal-detail__footer"><Link className="button button--quiet button--small" href="/packages/pkg_shorts_intro">샘플 상세</Link><Link className="button button--small" href="/packages/pkg_shorts_intro#proposal">제안 화면 보기</Link></div>
-            </div>
-          </div>
-        </div>
-      </section>
+          <form action="/search" className="home-v2__search">
+            <SearchIcon size={22} />
+            <label className="sr-only" htmlFor="home-creator-search">유튜버 검색</label>
+            <input id="home-creator-search" name="q" placeholder="채널명, 카테고리, 키워드로 검색" />
+            <button aria-label="유튜버 검색" type="submit"><ArrowIcon /></button>
+          </form>
 
-      <section className="home-search-band" aria-label="광고 상품 검색">
-        <form className="home-search-band__inner" action="/market">
-          <label className="search-control"><SearchIcon /><span className="sr-only">광고 상품 검색</span><input name="q" placeholder="채널명, 카테고리, 광고 형식을 검색하세요" /></label>
-          <select className="select-control" aria-label="카테고리" name="category"><option>카테고리</option><option>라이프스타일</option><option>IT·테크</option><option>뷰티</option></select>
-          <select className="select-control" aria-label="광고 형식" name="format"><option>광고 형식</option><option>Shorts</option><option>롱폼 통합</option><option>UGC</option></select>
-          <button className="button button--small" type="submit">검색</button>
-        </form>
-      </section>
-
-      <section className="home-packages">
-        <div className="home-packages__head"><h2>샘플 광고 상품 구성</h2><Link href="/market">제품 프리뷰 전체 보기 <ArrowIcon size={16} /></Link></div>
-        <div className="package-rail">
-          {marketplacePackages.map((item, index) => (
-            <Link className="package-card" href={`/packages/${item.id}`} key={item.id}>
-              <PackageMedia item={item} priority={index === 0} />
-              <div className="package-card__content">
-                <span className="package-card__creator">{item.creatorName}</span>
-                <h3>{item.title}</h3>
-                <span className="package-card__meta">샘플 조건 · {item.leadTimeDays}일 · 수정 {item.revisionCount}회</span>
-                <span className="package-card__price">예시 {formatKrw(item.priceKrw)}<BookmarkIcon size={18} /></span>
-              </div>
+          <div className="home-v2__paths">
+            <Link className="home-path home-path--primary" href="/search">
+              <span><SearchIcon size={26} /></span>
+              <div><strong>유튜버 탐색</strong><small>원본 채널 정보와 출처 확인</small></div>
+              <ArrowIcon />
             </Link>
-          ))}
+            <Link className="home-path" href="/market">
+              <span><ContractIcon size={26} /></span>
+              <div><strong>광고 상품</strong><small>유튜버 확정 단가 상품만 분리</small></div>
+              <ArrowIcon />
+            </Link>
+          </div>
+
+          <p className="home-v2__boundary"><ShieldIcon size={18} /> 공개 결제는 샌드박스 · 실제 청구와 지급 없음</p>
         </div>
+
+        <aside className="home-deal-card" aria-label="광고 거래 흐름 미리보기">
+          <div className="home-deal-card__head">
+            <div><p>거래 흐름</p><h2>조건이 바뀔 때마다<br />기록이 남습니다.</h2></div>
+            <span>SANDBOX</span>
+          </div>
+          <ol className="home-deal-card__steps">
+            {dealStages.map(({ label, detail, icon: Icon }, index) => (
+              <li key={label}>
+                <span className="home-deal-card__icon"><Icon size={20} /></span>
+                <div><strong>{label}</strong><small>{detail}</small></div>
+                <b>{String(index + 1).padStart(2, "0")}</b>
+              </li>
+            ))}
+          </ol>
+          <div className="home-deal-card__foot">
+            <p><LockIcon size={16} /> 실제 상대방·결제사와 연결되지 않는 공개 데모입니다.</p>
+            <Link href="/deal-demo">전체 흐름 체험 <ArrowIcon size={17} /></Link>
+          </div>
+        </aside>
       </section>
 
-      <section className="workflow-band">
-        <div className="workflow-band__inner">
-          <h2>튜버봇이 준비 중인 광고 집행 흐름</h2>
-          <div className="workflow-list">
-            <div className="workflow-item"><SearchIcon size={28} /><strong>채널 검색 및 제안</strong><p>샘플 조건을 통해 검색과 제안 화면 구조를 미리 확인합니다.</p></div>
-            <div className="workflow-item"><ContractIcon size={28} /><strong>계약 및 기록 관리</strong><p>전자 제안과 이력 관리의 예정 흐름을 보여줍니다.</p></div>
-            <div className="workflow-item"><LockIcon size={28} /><strong>샌드박스 결제</strong><p>실제 계약 전 결제 흐름과 보호 조건을 테스트합니다.</p></div>
-            <div className="workflow-item"><UploadIcon size={28} /><strong>콘텐츠 검수</strong><p>완성본 승인과 수정 요청을 기록하도록 설계한 프리뷰입니다.</p></div>
-            <div className="workflow-item"><MessageIcon size={28} /><strong>정산 및 내역 관리</strong><p>운영 PG 연결 전에는 실제 결제와 정산을 제공하지 않습니다.</p></div>
-          </div>
+      <section className="legacy-restore">
+        <header className="legacy-restore__head">
+          <div><p>ORIGINAL DATA RESTORED</p><h2>처음 제공된 유튜버 정보를 복원했습니다.</h2></div>
+          <Link href="/search">전체 유튜버 보기 <ArrowIcon size={17} /></Link>
+        </header>
+
+        <div className="legacy-restore__list">
+          {featuredLegacyCreators.map((creator) => {
+            const price = creator.priceProvenance.access === "PUBLIC_AT_SOURCE"
+              ? formatLegacyKrw(creator.priceProvenance.legacyEstimatedPriceKrw)
+              : "원본에서 로그인 필요";
+            return (
+              <Link className="legacy-restore__row" href={`/channel/${creator.legacyId}`} key={creator.legacyId}>
+                <div className="legacy-restore__identity">
+                  {creator.imageUrl ? <Image alt={`${creator.name} 채널 이미지`} height={56} src={creator.imageUrl} unoptimized width={56} /> : null}
+                  <div><strong>{creator.name}</strong><span>DISCOVERY ONLY · 미입점</span></div>
+                </div>
+                <div className="legacy-restore__category"><small>카테고리</small><span>{creator.categories.join(" · ")}</span></div>
+                <div><small>구독자</small><strong>{formatCreatorCount(creator.subscriberCount)}</strong></div>
+                <div className="legacy-restore__price"><small>원본 예상 광고 단가</small><strong>{price}</strong></div>
+                <div className="legacy-restore__source"><small>원본 공개값 확인</small><span>2026.08.02 · 거래가 아님</span></div>
+                <ArrowIcon />
+              </Link>
+            );
+          })}
         </div>
+
+        <p className="legacy-restore__notice">
+          <ShieldIcon size={20} />
+          위 금액은 원본 사이트가 “예상 광고 단가”로 공개한 과거 표시값을 읽기 전용으로 보존한 것입니다. 유튜버가 직접 확정한 판매가가 아니며, 채널 소유·판매자 인증과 상품 단가 확인 전에는 제안·결제가 열리지 않습니다.
+        </p>
+      </section>
+
+      <section className="home-demo-band">
+        <div>
+          <p>WORKING PRODUCT DEMO</p>
+          <h2>사장님께 보여줄 수 있게,<br />거래 전 과정을 직접 눌러보세요.</h2>
+        </div>
+        <div className="home-demo-band__facts">
+          <span>제안 v1 → 역제안 v2</span>
+          <span>양측 개별 수락 → 계약 해시</span>
+          <span>간편결제 선택 → 샌드박스 승인</span>
+          <span>초안 → 수정 → 승인 → 정산 차단</span>
+        </div>
+        <Link className="button" href="/deal-demo">거래 데모 시작 <ArrowIcon /></Link>
       </section>
     </>
   );

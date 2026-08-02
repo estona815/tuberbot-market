@@ -16,6 +16,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
+  images: {
+    remotePatterns: [{ hostname: "yt3.ggpht.com", protocol: "https" }],
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ["postgres"],

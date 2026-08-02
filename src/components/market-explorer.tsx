@@ -1,31 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { BookmarkIcon, CloseIcon, FilterIcon, InfoIcon, SearchIcon } from "@/components/icons";
 import { PackageMedia } from "@/components/package-media";
 import { StatusLabel } from "@/components/status-label";
 import { formatKrw, type MarketplacePackage } from "@/lib/market-data";
 
-type MarketExplorerProps = { items: MarketplacePackage[] };
+type MarketExplorerProps = {
+  items: MarketplacePackage[];
+  initialCategory?: string;
+  initialFormat?: string;
+  initialQuery?: string;
+};
 
-export function MarketExplorer({ items }: MarketExplorerProps) {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("전체");
-  const [format, setFormat] = useState("전체");
+export function MarketExplorer({ items, initialCategory = "전체", initialFormat = "전체", initialQuery = "" }: MarketExplorerProps) {
+  const [query, setQuery] = useState(initialQuery);
+  const deferredQuery = useDeferredValue(query);
+  const [category, setCategory] = useState(initialCategory);
+  const [format, setFormat] = useState(initialFormat);
+  const [sort, setSort] = useState("RECOMMENDED");
   const [availableOnly, setAvailableOnly] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [saved, setSaved] = useState<Set<string>>(() => new Set());
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("ko-KR");
-    return items.filter((item) => {
+    const normalized = deferredQuery.trim().toLocaleLowerCase("ko-KR");
+    const matches = items.filter((item) => {
       const matchesQuery = !normalized || [item.creatorName, item.title, item.category].some((value) => value.toLocaleLowerCase("ko-KR").includes(normalized));
       const matchesCategory = category === "전체" || item.category === category;
       const matchesFormat = format === "전체" || item.format === format;
       return matchesQuery && matchesCategory && matchesFormat && (!availableOnly || item.available);
     });
-  }, [availableOnly, category, format, items, query]);
+    if (sort === "RECOMMENDED") return matches;
+    return [...matches].sort((left, right) => {
+      if (sort === "PRICE_ASC") return left.priceKrw < right.priceKrw ? -1 : left.priceKrw > right.priceKrw ? 1 : 0;
+      if (sort === "LEAD_TIME_ASC") return left.leadTimeDays - right.leadTimeDays;
+      return 0;
+    });
+  }, [availableOnly, category, deferredQuery, format, items, sort]);
 
   function toggleSaved(id: string) {
     setSaved((current) => {
@@ -67,12 +80,12 @@ export function MarketExplorer({ items }: MarketExplorerProps) {
       </section>
 
       <div className="market-commandbar">
-        <div className="market-tabs" role="tablist" aria-label="검색 대상">
-          <button aria-selected="true" className="is-active" role="tab" type="button">상품</button>
-          <Link href="/search" role="tab">유튜버</Link>
-        </div>
+        <nav aria-label="검색 대상" className="market-tabs">
+          <span aria-current="page" className="is-active">광고 상품</span>
+          <Link href="/search">유튜버</Link>
+        </nav>
         <button className="filter-trigger" onClick={() => setFilterOpen(true)} type="button"><FilterIcon /> 필터 <span>{Number(availableOnly) + Number(category !== "전체") + Number(format !== "전체")}</span></button>
-        <select className="select-control" aria-label="정렬"><option>추천순</option><option>낮은 가격순</option><option>빠른 제작순</option></select>
+        <select aria-label="정렬" className="select-control" onChange={(event) => setSort(event.target.value)} value={sort}><option value="RECOMMENDED">추천순</option><option value="PRICE_ASC">낮은 가격순</option><option value="LEAD_TIME_ASC">빠른 제작순</option></select>
       </div>
 
       <div className="market-layout">
@@ -83,7 +96,7 @@ export function MarketExplorer({ items }: MarketExplorerProps) {
             <div><h2>샘플 상품 {filtered.length}개</h2><p><InfoIcon size={16} /> 제품 프리뷰 · 실제 거래 불가 · 예상 광고 단가와 CPV 비공개</p></div>
           </div>
 
-          <div className="result-list">
+          <div aria-busy={query !== deferredQuery} className="result-list">
             {filtered.map((item, index) => (
               <article className={`market-result ${index === 0 ? "is-recommended" : ""}`} key={item.id}>
                 <PackageMedia item={item} priority={index === 0} />
@@ -101,7 +114,7 @@ export function MarketExplorer({ items }: MarketExplorerProps) {
                   </dl>
                   {index === 0 ? <p className="recommendation-reason">☆ {item.reason}</p> : null}
                 </div>
-                <div className="market-result__action"><strong>예시 {formatKrw(item.priceKrw)}</strong><span>샘플 제작 조건</span><button className="button" disabled type="button">제안 기능 준비 중</button></div>
+                <div className="market-result__action"><strong>예시 {formatKrw(item.priceKrw)}</strong><span>샘플 제작 조건</span><Link className="button" href="/deal-demo">거래 흐름 데모</Link></div>
               </article>
             ))}
             {filtered.length === 0 ? <div className="empty-state"><h3>조건에 맞는 상품이 없습니다.</h3><p>검색어나 필터를 조정해 보세요.</p></div> : null}
