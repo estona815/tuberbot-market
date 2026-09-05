@@ -1,16 +1,28 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { CloseIcon, MenuIcon } from "@/components/icons";
-import s from "./acquisition.module.css";
+import s from "./presentation.module.css";
 const navigation = [["유튜버 찾기","/search"],["예산 계산","/budget"],["이용 안내","/guide"]] as const;
 export function CustomerHeader() {
   const [open,setOpen]=useState(false);
-  return <header className="site-header" style={{ background:"rgba(255,255,255,.97)" }}><div className="site-header__inner" style={{ maxWidth:1180 }}><Brand /><nav className="desktop-nav" aria-label="주요 메뉴">{navigation.map(([label,href]) => <Link key={href} href={href}>{label}</Link>)}<Link className={s.primary} href="/inquiry">광고 문의</Link></nav><div className="mobile-nav__actions"><Link href="/inquiry">광고 문의</Link><button className="icon-button" type="button" aria-label={open ? "메뉴 닫기" : "메뉴 열기"} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <CloseIcon /> : <MenuIcon />}</button></div></div>{open && <nav className="mobile-nav" aria-label="모바일 메뉴">{navigation.map(([label,href]) => <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>)}<Link href="/inquiry" onClick={() => setOpen(false)}>광고 문의</Link></nav>}</header>;
+  const pathname = usePathname();
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpen(false); trigger.current?.focus(); } };
+    const media = window.matchMedia("(min-width: 761px)");
+    const resize = () => { if (media.matches) setOpen(false); };
+    window.addEventListener("keydown", escape); media.addEventListener("change", resize);
+    return () => { window.removeEventListener("keydown", escape); media.removeEventListener("change", resize); };
+  }, [open]);
+  const current = (href: string) => pathname === href || (href === "/search" && pathname?.startsWith("/channel/")) ? "page" as const : undefined;
+  return <header className={`site-header ${s.header}`}><div className="site-header__inner" style={{ maxWidth:1180 }}><Brand /><nav className="desktop-nav" aria-label="주요 메뉴">{navigation.map(([label,href]) => <Link key={href} href={href} aria-current={current(href)}>{label}</Link>)}<Link className={s.primary} href="/inquiry">광고 문의</Link></nav><div className="mobile-nav__actions"><Link href="/inquiry">광고 문의</Link><button ref={trigger} className="icon-button" type="button" aria-controls="customer-mobile-menu" aria-label={open ? "메뉴 닫기" : "메뉴 열기"} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <CloseIcon /> : <MenuIcon />}</button></div></div>{open && <nav id="customer-mobile-menu" className={`mobile-nav ${s.mobileMenu}`} aria-label="모바일 메뉴">{navigation.map(([label,href]) => <Link key={href} href={href} aria-current={current(href)} onClick={() => setOpen(false)}>{label}</Link>)}<Link href="/inquiry" onClick={() => setOpen(false)}>광고 문의</Link></nav>}</header>;
 }
 export function CustomerFooter() {
-  return <footer className="footer" style={{ background:"#f5f7fa",borderTop:"1px solid #e2e7ed" }}><div className="footer__inner" style={{ maxWidth:1180 }}><div><Brand compact /><p>채널 탐색부터 광고 예산 기획과 문의까지.</p><small>자체 기준 예상 예산은 특정 채널의 확정 가격이 아닙니다.<br />현재 온라인 결제·지급은 제공하지 않습니다.</small><p style={{ fontSize:12 }}>문의 접수 담당 권준 · <a href="mailto:kwonj0815@gmail.com">kwonj0815@gmail.com</a></p></div><nav aria-label="하단 메뉴"><Link href="/guide">이용 안내</Link><Link href="/inquiry-privacy">개인정보 안내</Link><Link href="/inquiry">광고 문의</Link><Link href="/workspace">캠페인 관리 체험</Link><Link href="/rate-studio">상세 계산 도구</Link><Link href="/launch">운영 연결 상태</Link></nav></div></footer>;
+  return <footer className={`footer ${s.footerShell}`}><div className="footer__inner" style={{ maxWidth:1180 }}><div><Brand compact /><p>채널 탐색부터 광고 예산 기획과 문의까지.</p><small>자체 기준 예상 예산은 특정 채널의 확정 가격이 아닙니다.<br />현재 온라인 결제·지급은 제공하지 않습니다.</small><p style={{ fontSize:12 }}>문의 접수 담당 권준 · <a href="mailto:kwonj0815@gmail.com">kwonj0815@gmail.com</a></p></div><nav aria-label="하단 메뉴"><Link href="/guide">이용 안내</Link><Link href="/inquiry-privacy">개인정보 안내</Link><Link href="/inquiry">광고 문의</Link><Link href="/workspace">캠페인 관리 체험</Link><Link href="/rate-studio">상세 계산 도구</Link><Link href="/launch">운영 연결 상태</Link></nav></div></footer>;
 }
 export function CustomerGuide() {
   return <div className={s.scope}><div className={`${s.wrap} ${s.policy}`}><header className={s.title}><h1>캠페인 준비, 이렇게 시작하세요.</h1><p>예산 기획과 문의는 간단하게, 진행 조건은 명확하게.</p></header>{[
