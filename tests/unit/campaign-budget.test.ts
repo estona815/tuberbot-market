@@ -1,0 +1,14 @@
+import { describe,expect,it } from "vitest";
+import { BUDGET_MODEL,budgetFromQuery,budgetQuery,budgetText,campaignBudget,DEFAULT_BUDGET,inquirySchema } from "@/domain/campaign-budget";
+describe("independent campaign planning assumptions",() => {
+  it.each([["shorts","290000"],["integration","590000"],["branded","1290000"]])("displays a reproducible %s planning example",(format,amount) => { expect(campaignBudget({ ...DEFAULT_BUDGET,format }).amountKrw).toBe(amount); });
+  it("computes usage, category, quantity and VAT in integer KRW",() => { const result=campaignBudget({ ...DEFAULT_BUDGET,category:"tech",usage:"paid",quantity:3 }); expect(result.amountKrw).toBe("1566000"); expect(result.vatKrw).toBe("156600"); expect(result.totalWithVatKrw).toBe("1722600"); expect(result.lowerKrw).toBe("1252800"); expect(result.upperKrw).toBe("1879200"); });
+  it("always labels assumptions rather than quoting a real creator",() => { const result=campaignBudget(DEFAULT_BUDGET); expect(result.model).toBe(BUDGET_MODEL); expect(result.disclaimer).toContain("특정 채널의 판매가"); expect(budgetText(result)).toContain("통계적 예측구간이 아닙니다"); });
+  it.each([-1,1000001,NaN,Infinity,1.5,"50000"])("rejects invalid size %s",(subscribers) => { expect(() => campaignBudget({ ...DEFAULT_BUDGET,subscribers })).toThrow(); });
+  it.each([0,11,1.5,"1"])("rejects invalid quantity %s",(quantity) => { expect(() => campaignBudget({ ...DEFAULT_BUDGET,quantity })).toThrow(); });
+  it("rejects injected authoritative prices and unknown properties",() => { expect(() => campaignBudget({ ...DEFAULT_BUDGET,amountKrw:"1" })).toThrow(); expect(() => campaignBudget({ ...DEFAULT_BUDGET,format:"unknown" })).toThrow(); });
+  it("never reads actual channel data or price query parameters",() => { const input=budgetFromQuery(new URLSearchParams("channel=MrBeast&amountKrw=1&subscribers=311000000")); expect(input).toEqual(DEFAULT_BUDGET); expect(campaignBudget(input).amountKrw).toBe("290000"); });
+  it("round trips only non-personal planning fields",() => { const query=budgetQuery(DEFAULT_BUDGET); expect(budgetFromQuery(new URLSearchParams(query))).toEqual(DEFAULT_BUDGET); expect(query).not.toContain("email"); expect(query).not.toContain("amount"); });
+  it.each(["format=wrong","size=1000001","quantity=0","size=-1&format=shorts","size=NaN"])("invalid query stays in safe defaults: %s",(text) => { expect(budgetFromQuery(new URLSearchParams(text))).toEqual(DEFAULT_BUDGET); });
+  it("requires valid contact info and both affirmative consent values",() => { const input={ brand:"테스트",email:"qa@example.com",goal:"awareness",message:"문의",privacyConsent:true,transferConsent:true }; expect(inquirySchema.parse(input).brand).toBe("테스트"); for(const modified of [{email:"wrong"},{privacyConsent:false},{transferConsent:false},{brand:""},{message:"x".repeat(1201)}]) expect(() => inquirySchema.parse({ ...input,...modified })).toThrow(); });
+});
