@@ -1,0 +1,9 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Robots-Tag: noindex, nofollow
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://cdn.jsdelivr.net https://yt3.ggpht.com https://yt3.googleusercontent.com; font-src 'self'; connect-src 'self'; form-action 'self' https://tuberbot-review.netlify.app; object-src 'none'; base-uri 'none'; frame-ancestors 'none'
+/release.json
+  Cache-Control: no-store
