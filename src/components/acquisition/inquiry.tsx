@@ -13,8 +13,7 @@ export function InquiryPrivacy({ expanded=false }: { expanded?: boolean }) {
 export function InquiryPage() {
   const params = useSearchParams();
   const result = campaignBudget(budgetFromQuery(new URLSearchParams(params.toString())));
-  const channelId = params.get("channel");
-  const channel = channelId ? getLegacyCreatorById(channelId) : undefined;
+  const channelId = params.get("channel"), channel = channelId ? getLegacyCreatorById(channelId) : undefined;
   const [brand,setBrand] = useState(""), [email,setEmail] = useState(""), [goal,setGoal] = useState<"awareness" | "sales" | "app" | "other">("awareness"), [message,setMessage] = useState("");
   const [privacy,setPrivacy] = useState(false), [transfer,setTransfer] = useState(false);
   const [busy,setBusy] = useState(false), [sent,setSent] = useState(false), [error,setError] = useState("");
@@ -38,7 +37,6 @@ export function InquiryPage() {
         "channel-id":channel?.legacyId ?? "", "privacy-consent":"yes", "transfer-consent":"yes", "privacy-version":PRIVACY_VERSION,
       };
       if (window.location.hostname !== LEAD_HOST) {
-        // Native cross-origin form navigation, not an unsafe CORS proxy or a fabricated local receipt.
         const target = document.createElement("form"); target.method="POST"; target.action=`https://${LEAD_HOST}/inquiry-received.html`;
         for (const [name,value] of Object.entries(values)) { const field=document.createElement("input"); field.type="hidden"; field.name=name; field.value=value; target.append(field); }
         document.body.append(target); target.submit(); target.remove();
@@ -53,13 +51,13 @@ export function InquiryPage() {
   return <div className={s.scope} data-testid="inquiry-page"><div className={s.wrap}>
     <header className={s.title}><h1>어떤 광고를 준비하고 있나요?</h1><p>브랜드와 목표를 남겨 주세요. 계산한 예산과 관심 채널도 함께 전달됩니다.</p></header>
     {sent ? <section className={s.success} role="status"><h2>광고 문의를 전송했습니다.</h2><p>튜버봇 운영팀에서 문의 내용을 확인할 수 있습니다. 답변은 입력한 이메일로 안내하며, 이 단계에서 결제나 채널 예약은 발생하지 않습니다.</p><div className={s.actions}><Link className={s.primary} href="/search">다른 채널 둘러보기</Link><Link className={s.secondary} href="/">홈으로</Link></div></section> : <div className={s.inquiryLayout}>
-      <form name={LEAD_FORM} method="POST" action={`https://${LEAD_HOST}/inquiry-received.html`} onSubmit={(event) => void submit(event)} noValidate className={s.config}>
+      <form name={LEAD_FORM} method="POST" action={`https://${LEAD_HOST}/inquiry-received.html`} onSubmit={(event) => void submit(event)} onChangeCapture={() => setError("")} noValidate className={s.config}>
         <input type="hidden" name="form-name" value={LEAD_FORM} />
         <label className={s.honeypot} aria-hidden="true">이 항목은 비워 두세요<input name="company-website" tabIndex={-1} autoComplete="off" /></label>
-        <label className={s.field}>브랜드명 <span className="sr-only">필수</span><input name="brand" value={brand} onChange={(event) => setBrand(event.target.value)} maxLength={80} autoComplete="organization" placeholder="브랜드 또는 회사 이름" required disabled={busy} /></label>
-        <label className={s.field}>회신 이메일 <span className="sr-only">필수</span><input name="email" type="email" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" placeholder="name@company.com" required disabled={busy} /></label>
-        <label className={s.field}>캠페인 목표<select name="goal" value={goal} onChange={(event) => setGoal(event.target.value as typeof goal)} disabled={busy}><option value="awareness">브랜드·제품 알리기</option><option value="sales">구매·예약 유도</option><option value="app">앱·서비스 소개</option><option value="other">기타 / 함께 정하고 싶어요</option></select></label>
-        <label className={s.field}>추가로 알려주실 내용 · 선택<textarea name="message" value={message} onChange={(event) => setMessage(event.target.value)} maxLength={1200} placeholder="제품, 희망 일정, 필요한 제작 범위와 사용 기간 등을 알려주세요." disabled={busy} /></label>
+        <label className={s.field}>브랜드명 <span className="sr-only">필수</span><input aria-label="브랜드명" name="brand" value={brand} onChange={(event) => setBrand(event.target.value)} maxLength={80} autoComplete="organization" placeholder="브랜드 또는 회사 이름" required disabled={busy} /></label>
+        <label className={s.field}>회신 이메일 <span className="sr-only">필수</span><input aria-label="회신 이메일" name="email" type="email" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} autoComplete="email" placeholder="name@company.com" required disabled={busy} /></label>
+        <label className={s.field}>캠페인 목표<select aria-label="캠페인 목표" name="goal" value={goal} onChange={(event) => setGoal(event.target.value as typeof goal)} disabled={busy}><option value="awareness">브랜드·제품 알리기</option><option value="sales">구매·예약 유도</option><option value="app">앱·서비스 소개</option><option value="other">기타 / 함께 정하고 싶어요</option></select></label>
+        <label className={s.field}>추가로 알려주실 내용 · 선택<textarea aria-label="추가로 알려주실 내용 · 선택" name="message" value={message} onChange={(event) => setMessage(event.target.value)} maxLength={1200} placeholder="제품, 희망 일정, 필요한 제작 범위와 사용 기간 등을 알려주세요." disabled={busy} /></label>
         <InquiryPrivacy />
         <label className={s.consent}><input type="checkbox" name="privacy-consent" checked={privacy} onChange={(event) => setPrivacy(event.target.checked)} required disabled={busy} /><span>[필수] 문의 처리를 위한 개인정보 수집·이용에 동의합니다.</span></label>
         <label className={s.consent}><input type="checkbox" name="transfer-consent" checked={transfer} onChange={(event) => setTransfer(event.target.checked)} required disabled={busy} /><span>[필수] 문의 자료의 Netlify 미국 서버 저장에 동의합니다.</span></label>
