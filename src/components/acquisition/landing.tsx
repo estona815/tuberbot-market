@@ -4,7 +4,8 @@ import { campaignBudget, budgetQuery, DEFAULT_BUDGET, type BudgetInput } from "@
 import { BudgetHero } from "./budget-calculator";
 import { featuredLegacyCreators } from "@/lib/creator-data";
 import { CreatorTile } from "./creator-directory";
-import s from "./acquisition.module.css";
+import { FormatIcon } from "./format-icon";
+import s from "./presentation.module.css";
 
 const PLANS: { format: BudgetInput["format"]; title: string; description: string; scope: string[] }[] = [
   { format:"shorts", title:"짧고 선명한 쇼츠", description:"핵심 메시지를 짧은 영상으로", scope:["제품·서비스 핵심 장면 구성","쇼츠 1편 기획","채널 게시 기준 예산"] },
@@ -14,13 +15,13 @@ const PLANS: { format: BudgetInput["format"]; title: string; description: string
 export function CampaignPlans() {
   return <><div className={s.plans}>{PLANS.map((plan) => {
     const input = { ...DEFAULT_BUDGET, format:plan.format }, result = campaignBudget(input);
-    return <article className={s.plan} key={plan.format}><h3>{plan.title}</h3><p>{plan.description}</p><div className={s.planPrice}>{(Number(result.amountKrw)/10000).toLocaleString("ko-KR")}<small>만 원</small></div><p className={s.note}>자체 기준 예상 예산 · 부가세 별도</p><ul>{plan.scope.map((item) => <li key={item}>{item}</li>)}</ul><Link className={s.secondary} href={`/budget?${budgetQuery(input)}`}>내 조건에 맞춰 계산 <ArrowIcon size={15} /></Link></article>;
+    return <article className={s.plan} key={plan.format} data-format={plan.format}><div className={s.formatSignature}><FormatIcon format={plan.format} size={31} /><span>{plan.format === "shorts" ? "SHORT-FORM" : plan.format === "integration" ? "INTEGRATION" : "BRANDED"}</span></div><h3>{plan.title}</h3><p>{plan.description}</p><div className={s.planPrice}>{(Number(result.amountKrw)/10000).toLocaleString("ko-KR")}<small>만 원</small></div><p className={s.note}>자체 기준 예상 예산 · 부가세 별도</p><ul>{plan.scope.map((item) => <li key={item}>{item}</li>)}</ul><Link className={s.secondary} href={`/budget?${budgetQuery(input)}`}>내 조건에 맞춰 계산 <ArrowIcon size={15} /></Link></article>;
   })}</div><p className={s.note}>희망 규모 5만 명 · 라이프스타일 · 1편을 가정한 기획 예시입니다. 특정 채널의 확정 가격이나 판매 중인 패키지가 아닙니다.</p></>;
 }
 export function AcquisitionLanding() {
   return <div className={s.scope}>
     <div className={s.wrap}><section className={s.hero}>
-      <div><h1>유튜버 광고,<br /><em>예산부터 쉽게.</em></h1><p className={s.lead}>브랜드에 맞는 채널을 찾고,<br />콘텐츠 조건에 맞는 예산을 바로 계산하세요.</p><div className={s.actions}><Link className={s.primary} href="/budget">내 광고 예산 계산 <ArrowIcon size={17} /></Link><Link className={s.secondary} href="/search">유튜버 둘러보기</Link></div><p className={s.heroNote}>회원가입 없이 예산 계산 · 기획안 파일로 보관</p></div>
+      <div><h1>유튜버 광고,<br /><em>예산부터 쉽게.</em></h1><p className={s.lead}>브랜드에 맞는 채널을 찾고,<br />콘텐츠 조건에 맞는 예산을 바로 계산하세요.</p><div className={s.actions}><Link className={s.primary} href="/budget">내 광고 예산 계산 <ArrowIcon size={17} /></Link><Link className={s.secondary} href="/search">유튜버 둘러보기</Link></div><p className={s.heroNote}>회원가입 없이 계산하고, 기획안은 파일로 보관하세요.</p></div>
       <BudgetHero />
     </section><div className={s.miniFacts}><span><strong>조건을 바꾸면</strong> 예산도 바로 계산</span><span><strong>관심 채널과 함께</strong> 문의 내용 정리</span><span><strong>제작 범위까지</strong> 한 번에 기획</span></div></div>
     <section className={`${s.wrap} ${s.section}`}><header className={s.sectionHead}><div><h2>어떤 콘텐츠를 만들까요?</h2><p>형식별 기획 예산을 비교하고, 브랜드 조건으로 조정하세요.</p></div><Link className={s.textLink} href="/budget">전체 조건 설정 <ArrowIcon size={15} /></Link></header><CampaignPlans /></section>

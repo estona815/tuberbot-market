@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowIcon } from "@/components/icons";
 import { budgetFromQuery, budgetQuery, budgetText, campaignBudget, CATEGORY_LABELS, DEFAULT_BUDGET, FORMAT_LABELS, USAGE_LABELS, type BudgetInput, type BudgetResult } from "@/domain/campaign-budget";
-import s from "./acquisition.module.css";
+import { getLegacyCreatorById } from "@/lib/creator-data";
+import { FormatIcon } from "./format-icon";
+import s from "./presentation.module.css";
 
 export const formatWon = (value: string) => BigInt(value).toLocaleString("ko-KR");
 export function BudgetAmount({ result }: { result: BudgetResult }) {
@@ -31,6 +33,9 @@ export function BudgetHero() {
 }
 export function BudgetCalculator() {
   const params = useSearchParams();
+  const candidate = params.get("channel");
+  const channelId = candidate && getLegacyCreatorById(candidate) ? candidate : null;
+  const withChannel = (query: string) => query + (channelId ? `&channel=${encodeURIComponent(channelId)}` : "");
   const [input,setInput] = useState<BudgetInput>(() => budgetFromQuery(new URLSearchParams(params.toString())));
   const [size,setSize] = useState(String(input.subscribers));
   const [notice,setNotice] = useState("");
@@ -39,14 +44,14 @@ export function BudgetCalculator() {
   function set<K extends keyof BudgetInput>(field: K, value: BudgetInput[K]) { setNotice(""); setInput((old) => ({ ...old, [field]: value })); }
   async function copy() {
     if (!result) return;
-    try { const url = `${window.location.origin}${window.location.hash ? "/#" : ""}/budget?${budgetQuery(result.input)}`; await navigator.clipboard.writeText(url); setNotice("현재 조건의 링크를 복사했습니다."); }
+    try { const url = `${window.location.origin}${window.location.hash ? "/#" : ""}/budget?${withChannel(budgetQuery(result.input))}`; await navigator.clipboard.writeText(url); setNotice("현재 조건의 링크를 복사했습니다."); }
     catch { setNotice("클립보드 사용이 차단되어 있습니다. 기획안을 파일로 보관하세요."); }
   }
   return <div className={s.scope} data-testid="budget-page"><div className={s.wrap}>
-    <header className={s.title}><h1>광고 예산, 바로 계산해 보세요.</h1><p>콘텐츠 형식과 희망 채널 규모를 정하면 기획 예산이 바로 바뀝니다.</p></header>
+    <header className={s.title}><nav className={s.breadcrumb} aria-label="현재 위치"><Link href="/">홈</Link><ArrowIcon /><span>예산 계산</span></nav><h1>광고 예산, 바로 계산해 보세요.</h1><p>콘텐츠 형식과 희망 채널 규모를 정하면 기획 예산이 바로 바뀝니다.</p></header>
     <div className={s.budgetLayout}>
       <section className={s.config} aria-label="예산 조건"><h2>어떤 캠페인을 준비하시나요?</h2>
-        <div className={s.formatOptions} aria-label="콘텐츠 형식">{Object.entries(FORMAT_LABELS).map(([key,label]) => <button key={key} type="button" aria-pressed={input.format === key} onClick={() => set("format",key as BudgetInput["format"])}>{label}</button>)}</div>
+        <div className={s.formatOptions} aria-label="콘텐츠 형식">{Object.entries(FORMAT_LABELS).map(([key,label]) => <button key={key} type="button" aria-pressed={input.format === key} onClick={() => set("format",key as BudgetInput["format"])}><FormatIcon format={key as BudgetInput["format"]} size={25} />{label}</button>)}</div>
         <label className={s.field}>브랜드 분야<select aria-label="브랜드 분야" value={input.category} onChange={(event) => set("category",event.target.value as BudgetInput["category"])}>{Object.entries(CATEGORY_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <div className={s.formRow}>
           <label className={s.field}>희망 채널 규모 · 명<input aria-label="희망 채널 규모 · 명" value={size} inputMode="numeric" maxLength={9} onChange={(event) => { setSize(event.target.value.replaceAll(",","")); setNotice(""); }} aria-invalid={!validSize} aria-describedby="budget-size-help" /></label>
@@ -58,9 +63,9 @@ export function BudgetCalculator() {
         <p className={s.note}>직접 a·b를 입력하거나 거래 자료로 보정하려면 <Link className={s.textLink} href="/rate-studio">상세 계산 도구</Link>를 이용하세요.</p>
       </section>
       <aside className={s.result} aria-label="기획 예산 결과" aria-live="polite">
-        {result ? <><h2>자체 기준 예상 예산</h2><BudgetAmount result={result} /><p className={s.note}>부가세 별도 · {FORMAT_LABELS[input.format]} {input.quantity}편</p><dl className={s.resultFacts}><div><dt>기획 여유범위 ±20%</dt><dd>{formatWon(result.lowerKrw)}~{formatWon(result.upperKrw)}원</dd></div><div><dt>부가세</dt><dd>{formatWon(result.vatKrw)}원</dd></div><div><dt>부가세 포함</dt><dd>{formatWon(result.totalWithVatKrw)}원</dd></div></dl><Link className={s.primary} href={`/inquiry?${budgetQuery(result.input)}`}>이 조건으로 광고 문의 <ArrowIcon size={17} /></Link><button type="button" className={s.secondary} onClick={() => saveText("튜버봇_예산기획안.txt",budgetText(result))}>예산 기획안 받기</button><button type="button" className={s.textLink} onClick={() => void copy()}>조건 링크 복사</button><p className={s.note}>{result.disclaimer} ±20%는 임의의 여유율이며 통계적 예측구간이 아닙니다.</p></> : <p className={s.error} role="alert">희망 규모를 0~1,000,000 사이의 정수로 입력하세요.</p>}
+        {result ? <><h2>자체 기준 예상 예산</h2><BudgetAmount result={result} /><p className={s.note}>부가세 별도 · {FORMAT_LABELS[input.format]} {input.quantity}편</p><dl className={s.resultFacts}><div><dt>기획 여유범위 ±20%</dt><dd>{formatWon(result.lowerKrw)}~{formatWon(result.upperKrw)}원</dd></div><div><dt>부가세</dt><dd>{formatWon(result.vatKrw)}원</dd></div><div><dt>부가세 포함</dt><dd>{formatWon(result.totalWithVatKrw)}원</dd></div></dl><Link className={s.primary} href={`/inquiry?${withChannel(budgetQuery(result.input))}`}>이 조건으로 광고 문의 <ArrowIcon size={17} /></Link><button type="button" className={s.secondary} onClick={() => saveText("튜버봇_예산기획안.txt",budgetText(result))}>예산 기획안 받기</button><button type="button" className={s.textLink} onClick={() => void copy()}>조건 링크 복사</button><p className={s.note}>{result.disclaimer} ±20%는 임의의 여유율이며 통계적 예측구간이 아닙니다.</p></> : <p className={s.error} role="alert">희망 규모를 0~1,000,000 사이의 정수로 입력하세요.</p>}
         {notice && <p className={s.notice} role="status">{notice}</p>}
       </aside>
     </div>
-  </div></div>;
+  </div>{result && <aside className={s.mobileBudgetBar} aria-label="모바일 예산 요약"><div><span>자체 기준 예상 예산 · 부가세 별도</span><strong>{formatWon(result.amountKrw)}원</strong></div><Link className={s.primary} href={`/inquiry?${withChannel(budgetQuery(result.input))}`}>이 예산으로 문의</Link></aside>}</div>;
 }

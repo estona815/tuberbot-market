@@ -6,7 +6,7 @@ import { z } from "zod";
 import { budgetFromQuery, budgetQuery, budgetText, campaignBudget, CATEGORY_LABELS, FORMAT_LABELS, inquirySchema, LEAD_FORM, LEAD_HOST, PRIVACY_VERSION, USAGE_LABELS } from "@/domain/campaign-budget";
 import { getLegacyCreatorById } from "@/lib/creator-data";
 import { BudgetAmount, saveText } from "./budget-calculator";
-import s from "./acquisition.module.css";
+import s from "./presentation.module.css";
 export function InquiryPrivacy({ expanded=false }: { expanded?: boolean }) {
   return <details className={s.privacy} open={expanded || undefined}><summary>개인정보 수집·이용 및 해외 저장 안내</summary><p>문의 접수 운영자: 권준 · 문의·삭제 요청: <a href="mailto:kwonj0815@gmail.com">kwonj0815@gmail.com</a>. 수집 항목은 브랜드명, 회신 이메일, 캠페인 목표, 문의 내용과 기획 조건입니다. 광고 문의 처리와 회신 목적으로만 사용하며 마케팅 수신 동의로 사용하지 않습니다.</p><p>문의 자료는 접수 후 최대 90일 동안 보관한 뒤 운영자가 삭제합니다. 그 전에 삭제를 요청할 수 있습니다. 동의를 거부할 수 있지만 온라인 문의 접수는 이용할 수 없습니다. 연락처가 필요 없는 예산 계산과 기획안 저장은 계속 이용할 수 있습니다.</p><p>해외 저장: Netlify, Inc.의 미국 소재 시스템에 문의 제출 시 암호화 통신으로 위 항목이 전달되어 폼 접수·호스팅을 위해 저장됩니다. 보관 기간은 위 문의 자료 보관 기간과 같습니다. 해외 저장 동의를 거부하면 이메일 문의 또는 기획안 파일 이용이 가능합니다. Netlify 개인정보 문의: privacy@netlify.com.</p><p>주민등록번호, 금융정보, 비밀번호, 건강정보 등 민감한 정보는 적지 마세요. 상담 내용은 선택한 유튜버에게 자동 전달되지 않습니다.</p></details>;
 }
@@ -49,8 +49,8 @@ export function InquiryPage() {
     finally { lock.current=false; setBusy(false); }
   }
   return <div className={s.scope} data-testid="inquiry-page"><div className={s.wrap}>
-    <header className={s.title}><h1>어떤 광고를 준비하고 있나요?</h1><p>브랜드와 목표를 남겨 주세요. 계산한 예산과 관심 채널도 함께 전달됩니다.</p></header>
-    {sent ? <section className={s.success} role="status"><h2>광고 문의를 전송했습니다.</h2><p>튜버봇 운영팀에서 문의 내용을 확인할 수 있습니다. 답변은 입력한 이메일로 안내하며, 이 단계에서 결제나 채널 예약은 발생하지 않습니다.</p><div className={s.actions}><Link className={s.primary} href="/search">다른 채널 둘러보기</Link><Link className={s.secondary} href="/">홈으로</Link></div></section> : <div className={s.inquiryLayout}>
+    <header className={s.title}><nav className={s.breadcrumb} aria-label="현재 위치"><Link href="/">홈</Link><span aria-hidden="true">/</span><span>광고 문의</span></nav><h1>어떤 광고를 준비하고 있나요?</h1><p>브랜드와 목표를 남겨 주세요. 계산한 예산과 관심 채널도 함께 전달됩니다.</p></header>
+    {sent ? <section className={s.success} role="status"><h2>광고 문의를 전송했습니다.</h2><p>전송 요청을 처리했습니다. 접수 확인이 필요하면 kwonj0815@gmail.com으로 연락해 주세요. 이 단계에서 결제나 채널 예약은 발생하지 않습니다.</p><div className={s.actions}><Link className={s.primary} href="/search">다른 채널 둘러보기</Link><Link className={s.secondary} href="/">홈으로</Link></div></section> : <div className={s.inquiryLayout}>
       <form name={LEAD_FORM} method="POST" action={`https://${LEAD_HOST}/inquiry-received.html`} onSubmit={(event) => void submit(event)} onChangeCapture={() => setError("")} noValidate className={s.config}>
         <input type="hidden" name="form-name" value={LEAD_FORM} />
         <label className={s.honeypot} aria-hidden="true">이 항목은 비워 두세요<input name="company-website" tabIndex={-1} autoComplete="off" /></label>
@@ -65,7 +65,7 @@ export function InquiryPage() {
         <button type="submit" className={s.primary} disabled={busy} style={{ width:"100%" }}>{busy ? "문의 전송 중…" : "광고 문의 보내기"}</button>
         <p className={s.note}>튜버봇 운영팀에 접수됩니다. 유튜버 자동 발송·광고 예약·결제는 진행되지 않습니다. 이메일로 문의하려면 <a className={s.textLink} href="mailto:kwonj0815@gmail.com?subject=%ED%8A%9C%EB%B2%84%EB%B4%87%20%EA%B4%91%EA%B3%A0%20%EB%AC%B8%EC%9D%98">메일 앱 열기</a>를 이용하세요.</p>
       </form>
-      <aside className={s.result} aria-label="문의에 담긴 기획안"><h2>문의에 담긴 예상 예산</h2><BudgetAmount result={result} /><p className={s.note}>자체 기준 기획 예산 · 부가세 별도</p><dl className={s.resultFacts}><div><dt>브랜드 분야</dt><dd>{CATEGORY_LABELS[result.input.category]}</dd></div><div><dt>콘텐츠</dt><dd>{FORMAT_LABELS[result.input.format]} {result.input.quantity}편</dd></div><div><dt>희망 규모</dt><dd>{result.input.subscribers.toLocaleString("ko-KR")}명</dd></div><div><dt>사용 범위</dt><dd>{USAGE_LABELS[result.input.usage]}</dd></div>{channel && <div><dt>관심 채널</dt><dd>{channel.name}</dd></div>}</dl><p className={s.note}>{result.disclaimer}{channel ? " 관심 채널의 실제 구독자 수를 이 계산에 자동 적용하지 않았습니다." : ""}</p><Link className={s.textLink} href={`/budget?${budgetQuery(result.input)}`}>예산 조건 다시 설정</Link><button type="button" className={s.secondary} onClick={() => saveText("튜버봇_문의기획안.txt",budgetText(result,channel?.name))}>개인정보 없이 기획안 받기</button></aside>
+      <aside className={s.result} aria-label="문의에 담긴 기획안"><h2>문의에 담긴 예상 예산</h2><BudgetAmount result={result} /><p className={s.note}>자체 기준 기획 예산 · 부가세 별도</p><dl className={s.resultFacts}><div><dt>브랜드 분야</dt><dd>{CATEGORY_LABELS[result.input.category]}</dd></div><div><dt>콘텐츠</dt><dd>{FORMAT_LABELS[result.input.format]} {result.input.quantity}편</dd></div><div><dt>희망 규모</dt><dd>{result.input.subscribers.toLocaleString("ko-KR")}명</dd></div><div><dt>사용 범위</dt><dd>{USAGE_LABELS[result.input.usage]}</dd></div>{channel && <div><dt>관심 채널</dt><dd>{channel.name}</dd></div>}</dl><p className={s.note}>{result.disclaimer}{channel ? " 관심 채널의 실제 구독자 수를 이 계산에 자동 적용하지 않았습니다." : ""}</p><Link className={s.textLink} href={`/budget?${budgetQuery(result.input)}${channel ? `&channel=${encodeURIComponent(channel.legacyId)}` : ""}`}>예산 조건 다시 설정</Link><button type="button" className={s.secondary} onClick={() => saveText("튜버봇_문의기획안.txt",budgetText(result,channel?.name))}>개인정보 없이 기획안 받기</button></aside>
     </div>}
   </div></div>;
 }
