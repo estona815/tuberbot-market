@@ -1,0 +1,1 @@
+export function releaseStatus() { return { release: "review-v2", mode: "PUBLIC_REVIEW", localWorkspace: true, rateStudio: true, identityConfigured: false, connectedWorkspaceConfigured: false, youtubeConfigured: false, livePayments: false, livePayouts: false, termsVersion: null, privacyVersion: null, externalVerification: "NOT_ATTESTED" }; }
