@@ -6,6 +6,7 @@ import { Brand } from "@/components/brand";
 import { CloseIcon, MenuIcon } from "@/components/icons";
 
 const links = [
+  ["광고비 계산", "/rate-studio"],
   ["유튜버 찾기", "/search"],
   ["광고 상품", "/market"],
   ["캠페인", "/campaigns"],
