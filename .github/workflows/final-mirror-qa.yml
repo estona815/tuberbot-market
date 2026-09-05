@@ -1,0 +1,68 @@
+name: Final mirror and inquiry QA
+on:
+  pull_request:
+    paths: ['.github/workflows/final-mirror-qa.yml']
+permissions:
+  contents: read
+jobs:
+  public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Verify existing shared link and one real owned-account test inquiry
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {mkdir,writeFile} from 'node:fs/promises';
+          import {createHash} from 'node:crypto';
+          import {chromium,expect} from '@playwright/test';
+          const origin='https://tuberbot-review.vercel.app',source='6c20152dc0c571f5a1540f92ac9220d904b1236a';
+          const out='test-results/final-mirror';await mkdir(out,{recursive:true});
+          const response=await fetch(`${origin}/release.json`,{redirect:'error'});assert.equal(response.status,200);const release=await response.json();assert.equal(release.revision,source);
+          const html=await (await fetch(origin,{redirect:'error'})).text();
+          for(const match of html.matchAll(/integrity="(sha384-[^"]+)"\s+(?:href|src)="([^"]+)"/g)) {
+            const asset=await fetch(match[2],{redirect:'error'});assert.equal(asset.status,200);
+            assert.equal(`sha384-${createHash('sha384').update(Buffer.from(await asset.arrayBuffer())).digest('base64')}`,match[1]);
+          }
+          const browser=await chromium.launch();
+          try {
+            const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];
+            page.on('pageerror',e=>errors.push(e.message));
+            await page.goto(origin);await expect(page.getByRole('heading',{name:/유튜버 광고,/})).toBeVisible();
+            await page.screenshot({path:`${out}/vercel-home.png`,fullPage:true});
+            await page.goto(`${origin}/#/inquiry?format=shorts&size=50000`);
+            const form=page.getByTestId('inquiry-page');await expect(form.getByTestId('planning-amount')).toHaveText('290,000원');
+            await form.getByLabel('브랜드명',{exact:true}).fill('권준 · 튜버봇 개발 검수');
+            await form.getByLabel('회신 이메일',{exact:true}).fill('kwonj0815@gmail.com');
+            await form.getByLabel('추가로 알려주실 내용 · 선택',{exact:true}).fill('튜버봇 홈페이지 문의 접수 확인을 위한 개발 검수 요청입니다. 쇼츠 한 편 제작을 기준으로 기획 금액과 회신 이메일이 올바르게 저장되는지 점검하고 있습니다. 실제 광고 집행은 요청하지 않으며 개발자가 확인한 뒤 이 검수 기록만 삭제합니다.');
+            await form.getByRole('checkbox',{name:/개인정보 수집/}).check();await form.getByRole('checkbox',{name:/미국 서버 저장/}).check();
+            const postPromise=page.waitForRequest(req=>req.method()==='POST'&&req.url()==='https://tuberbot-review.netlify.app/inquiry-received.html');
+            await form.getByRole('button',{name:'광고 문의 보내기',exact:true}).click();
+            const post=await postPromise, data=new URLSearchParams(post.postData()||'');
+            await page.waitForURL('https://tuberbot-review.netlify.app/inquiry-received.html');
+            await expect(page.getByRole('heading',{name:'광고 문의 전송 안내',exact:true})).toBeVisible();
+            assert.deepEqual(errors,[]);
+            await page.screenshot({path:`${out}/native-submission-receipt.png`,fullPage:true});
+            await page.setViewportSize({width:390,height:844});await page.goto(`${origin}/#/budget`);
+            await expect(page.getByTestId('planning-amount')).toHaveText('290,000원');
+            assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+            await page.screenshot({path:`${out}/vercel-mobile-budget.png`,fullPage:true});
+            await writeFile(`${out}/verified.json`,JSON.stringify({sourceRevision:source,origin,release,mirrorUiPassed:true,nativeCrossOriginFormPassed:true,qaRequestId:data.get('request-id'),qaBrand:'권준 · 튜버봇 개발 검수',backendReceiptMustBeChecked:true,at:new Date().toISOString()},null,2));
+            console.log('Existing shared URL, pinned assets, desktop/mobile UI and native form navigation PASS. Exactly one own-account QA inquiry submitted.');
+          }finally{await browser.close();}
+          JS
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-mirror-qa-${{ github.run_id }}
+          path: test-results/final-mirror/
+          retention-days: 14
