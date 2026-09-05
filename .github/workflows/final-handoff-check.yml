@@ -1,0 +1,59 @@
+name: Final read-only handoff verification
+on:
+  push:
+    branches: ['ops/final-handoff-check-20260905']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PUBLIC_QA_LIVE: 'true'
+      PUBLIC_QA_ORIGIN: 'https://tuberbot-review.netlify.app'
+      REVIEW_SOURCE_REVISION: '55607e78fa91c18463e6c153b519dd9435215e48'
+      QA_OUTPUT: '${{ runner.temp }}/final-handoff-check'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '55607e78fa91c18463e6c153b519dd9435215e48'
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - name: Validate current publicly accessible release
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { mkdir, writeFile } from 'node:fs/promises';
+          const origin=process.env.PUBLIC_QA_ORIGIN;
+          const response=await fetch(`${origin}/release.json?final=${Date.now()}`, { redirect:'manual',signal:AbortSignal.timeout(20000),cache:'no-store' });
+          assert.equal(response.status,200,'Release must be public without authentication');
+          const release=await response.json();
+          assert.equal(release.revision,process.env.REVIEW_SOURCE_REVISION,'Do not verify a stale or unreviewed release');
+          assert.equal(release.livePayments,false);
+          assert.equal(release.livePayouts,false);
+          const home=await fetch(origin,{redirect:'manual',signal:AbortSignal.timeout(20000)});
+          assert.equal(home.status,200);
+          const html=await home.text();
+          assert.match(html,/<html[^>]*lang="ko"/);
+          assert.match(html,/튜버봇/);
+          for (const match of html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)) {
+            const asset=await fetch(new URL(match[1],`${origin}/`),{redirect:'error',signal:AbortSignal.timeout(20000)});
+            assert.equal(asset.status,200,'Current JS and CSS must load');
+          }
+          await mkdir(process.env.QA_OUTPUT,{recursive:true});
+          await writeFile(`${process.env.QA_OUTPUT}/release-check.json`,JSON.stringify({release,httpStatus:home.status,origin,checkedAt:new Date().toISOString(),browserFallback:'Browser plugin absent; local container cannot resolve external hosts, using GitHub-hosted Playwright Chromium',scope:'Public handoff UI only. No inquiries sent; existing form-inbox verification limitation unchanged.'},null,2));
+          console.log('Current release, anonymous HTTPS access and assets PASS');
+          JS
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Verify live UI on four screen sizes with POST blocked
+        run: node scripts/verify-quality-v4.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-handoff-check-${{ github.run_id }}
+          path: '${{ runner.temp }}/final-handoff-check/'
+          retention-days: 3
