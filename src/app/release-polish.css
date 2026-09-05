@@ -2,5 +2,12 @@
 .home-demo-band h2 { font-size: clamp(24px, 2.05vw, 33px); line-height: 1.5; word-break: keep-all; overflow-wrap: break-word; letter-spacing: -.9px; }
 .home-demo-band__facts { line-height: 1.8; }
 @media (max-width:760px) { .home-demo-band h2 { font-size:26px; } }
+@media (max-width:720px) {
+  [data-testid="budget-page"] dl > div, [data-testid="inquiry-page"] dl > div { display:block; }
+  [data-testid="budget-page"] dl dd, [data-testid="inquiry-page"] dl dd { text-align:left; margin-top:4px; overflow-wrap:normal; word-break:keep-all; }
+}
+@media (max-width:360px) {
+  [data-testid="planning-amount"] { font-size:28px; letter-spacing:-1px; white-space:nowrap; }
+}
 @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 @media print { .site-header,.skip-link,.footer { display:none!important; } }
