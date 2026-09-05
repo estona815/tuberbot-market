@@ -62,9 +62,9 @@ CREATE FUNCTION workspace_update_guard() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF NEW.id IS DISTINCT FROM OLD.id OR NEW.advertiser_id IS DISTINCT FROM OLD.advertiser_id
     OR NEW.creator_id IS DISTINCT FROM OLD.creator_id OR NEW.created_at IS DISTINCT FROM OLD.created_at
-    OR NEW.document->'seed' IS DISTINCT FROM OLD.document->'seed'
+    OR (NEW.document->'seed') IS DISTINCT FROM (OLD.document->'seed')
     OR NEW.revision <> OLD.revision + 1
-    OR (NEW.document->'commands' - OLD.revision) IS DISTINCT FROM OLD.document->'commands'
+    OR ((NEW.document->'commands') - OLD.revision) IS DISTINCT FROM (OLD.document->'commands')
   THEN RAISE EXCEPTION 'workspace lineage or immutable seed violation'; END IF;
   RETURN NEW;
 END;
