@@ -1,0 +1,92 @@
+name: Presentation refinement v4
+on:
+  pull_request:
+    paths: ['.github/workflows/quality-v4.yml','.ops/apply-quality-v4.mjs']
+permissions:
+  contents: write
+concurrency:
+  group: presentation-v4-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify-and-deploy:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex/quality-v4-20260905'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      REVIEW_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+      ENABLE_LIVE_PAYMENTS: 'false'
+      ENABLE_PAYOUTS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - name: Apply bounded source refinement
+        run: |
+          if [ -f .ops/apply-quality-v4.mjs ]; then node .ops/apply-quality-v4.mjs; fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck && pnpm lint && pnpm test
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - run: pnpm exec vite build --config review/vite.config.ts
+      - run: node scripts/verify-static-review.mjs
+      - run: node scripts/verify-quality-v4.mjs
+      - name: Record validated source, not a generated screenshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ -f .ops/apply-quality-v4.mjs ]; then git rm .ops/apply-quality-v4.mjs; fi
+          git add src/components/acquisition src/domain/creator-shortlist.ts tests/unit/creator-shortlist.test.ts
+          if ! git diff --cached --quiet; then
+            git commit -m 'feat: apply and validate refined presentation and shortlist interactions'
+            git push origin HEAD:codex/quality-v4-20260905
+          fi
+          echo "REVIEW_SOURCE_REVISION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - run: pnpm exec vite build --config review/vite.config.ts && node scripts/verify-quality-v4.mjs
+      - name: Publish pinned public assets
+        run: node scripts/publish-review-assets.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Prepare source archive
+        run: git archive --format=zip --output=tuberbot-v4-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quality-v4-ready-${{ github.run_id }}
+          path: |
+            tuberbot-v4-source.zip
+            review-publication.json
+            dist/public-review/
+            test-results/quality-v4/
+          retention-days: 14
+      - run: node scripts/netlify-handoff.mjs prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: netlify-deploy-key-${{ github.run_id }}
+          path: deploy-public-key/
+          retention-days: 1
+      - name: Deploy only after the run-bound provider grant
+        run: node scripts/netlify-handoff.mjs deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Verify live public UI without submitting inquiries
+        run: node scripts/verify-quality-v4.mjs
+        env:
+          PUBLIC_QA_LIVE: 'true'
+          QA_OUTPUT: test-results/quality-v4-live
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-v4-evidence-${{ github.run_id }}
+          path: |
+            test-results/quality-v4/
+            test-results/quality-v4-live/
+            test-results/static-review/
+            netlify-deployment-result.json
+          if-no-files-found: ignore
+          retention-days: 14
