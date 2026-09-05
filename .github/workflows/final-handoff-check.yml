@@ -12,7 +12,7 @@ jobs:
       PUBLIC_QA_LIVE: 'true'
       PUBLIC_QA_ORIGIN: 'https://tuberbot-review.netlify.app'
       REVIEW_SOURCE_REVISION: '55607e78fa91c18463e6c153b519dd9435215e48'
-      QA_OUTPUT: '${{ runner.temp }}/final-handoff-check'
+      QA_OUTPUT: '/tmp/final-handoff-check'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,5 +55,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: final-handoff-check-${{ github.run_id }}
-          path: '${{ runner.temp }}/final-handoff-check/'
+          path: '/tmp/final-handoff-check/'
           retention-days: 3
