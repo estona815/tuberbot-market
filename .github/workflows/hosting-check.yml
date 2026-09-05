@@ -1,0 +1,39 @@
+name: Hosting diagnostics
+on:
+  pull_request:
+    paths: ['.github/workflows/hosting-check.yml']
+permissions:
+  contents: read
+jobs:
+  hosts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Inspect public deployment responses without credentials
+        run: |
+          node --input-type=module <<'JS'
+          import { writeFile } from 'node:fs/promises';
+          const hosts = [
+            'tuberbot-market-review-kwonj0815-2863s-projects.vercel.app',
+            'tuberbot-market-review-ox6b0wdoa-kwonj0815-2863s-projects.vercel.app',
+            'tuberbot-review-kwonj0815-2863s-projects.vercel.app',
+            'tuberbot-review-9xy2cbslo-kwonj0815-2863s-projects.vercel.app',
+            'tuberbot-rate-studio-kyk1xndwz-kwonj0815-2863s-projects.vercel.app'
+          ];
+          const result = await Promise.all(hosts.map(async host => {
+            try {
+              const response = await fetch(`https://${host}/`, { redirect:'manual', signal: AbortSignal.timeout(20000) });
+              return { host, status: response.status, location: response.headers.get('location'), body: (await response.text()).slice(0,1600) };
+            } catch(error) { return { host, error: String(error) }; }
+          }));
+          console.log(JSON.stringify(result,null,2));
+          await writeFile('hosting-status.json', JSON.stringify(result,null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hosting-diagnostics-${{ github.sha }}
+          path: hosting-status.json
+          retention-days: 7
