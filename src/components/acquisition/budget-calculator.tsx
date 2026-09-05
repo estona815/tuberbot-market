@@ -21,8 +21,8 @@ export function BudgetHero() {
   return <aside className={s.heroPanel} aria-label="빠른 예산 계산">
     <div className={s.panelHead}><h2>내 캠페인, 예산은 얼마나?</h2><span className={s.pill}>즉시 계산</span></div>
     <div className={s.formRow}>
-      <label className={s.field}>콘텐츠 형식<select value={input.format} onChange={(event) => setInput({ ...input, format: event.target.value as BudgetInput["format"] })}>{Object.entries(FORMAT_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
-      <label className={s.field}>희망 채널 규모<select value={input.subscribers} onChange={(event) => setInput({ ...input, subscribers: Number(event.target.value) })}><option value={10000}>1만 명</option><option value={50000}>5만 명</option><option value={100000}>10만 명</option><option value={300000}>30만 명</option></select></label>
+      <label className={s.field}>콘텐츠 형식<select aria-label="콘텐츠 형식" value={input.format} onChange={(event) => setInput({ ...input, format: event.target.value as BudgetInput["format"] })}>{Object.entries(FORMAT_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+      <label className={s.field}>희망 채널 규모<select aria-label="희망 채널 규모" value={input.subscribers} onChange={(event) => setInput({ ...input, subscribers: Number(event.target.value) })}><option value={10000}>1만 명</option><option value={50000}>5만 명</option><option value={100000}>10만 명</option><option value={300000}>30만 명</option></select></label>
     </div>
     <div className={s.heroAmount} aria-live="polite"><span>자체 기준 예상 예산</span><BudgetAmount result={result} /><p className={s.note}>1편 · 라이프스타일 · 채널 게시만 · 부가세 별도</p></div>
     <Link className={s.primary} href={`/inquiry?${budgetQuery(input)}`}>이 예산으로 문의 <ArrowIcon size={17} /></Link>
@@ -47,13 +47,13 @@ export function BudgetCalculator() {
     <div className={s.budgetLayout}>
       <section className={s.config} aria-label="예산 조건"><h2>어떤 캠페인을 준비하시나요?</h2>
         <div className={s.formatOptions} aria-label="콘텐츠 형식">{Object.entries(FORMAT_LABELS).map(([key,label]) => <button key={key} type="button" aria-pressed={input.format === key} onClick={() => set("format",key as BudgetInput["format"])}>{label}</button>)}</div>
-        <label className={s.field}>브랜드 분야<select value={input.category} onChange={(event) => set("category",event.target.value as BudgetInput["category"])}>{Object.entries(CATEGORY_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+        <label className={s.field}>브랜드 분야<select aria-label="브랜드 분야" value={input.category} onChange={(event) => set("category",event.target.value as BudgetInput["category"])}>{Object.entries(CATEGORY_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <div className={s.formRow}>
-          <label className={s.field}>희망 채널 규모 · 명<input value={size} inputMode="numeric" maxLength={9} onChange={(event) => { setSize(event.target.value.replaceAll(",","")); setNotice(""); }} aria-invalid={!validSize} aria-describedby="budget-size-help" /></label>
-          <label className={s.field}>콘텐츠 수량<select value={input.quantity} onChange={(event) => set("quantity",Number(event.target.value))}>{Array.from({ length:10 },(_,index) => <option key={index} value={index + 1}>{index + 1}편</option>)}</select></label>
+          <label className={s.field}>희망 채널 규모 · 명<input aria-label="희망 채널 규모 · 명" value={size} inputMode="numeric" maxLength={9} onChange={(event) => { setSize(event.target.value.replaceAll(",","")); setNotice(""); }} aria-invalid={!validSize} aria-describedby="budget-size-help" /></label>
+          <label className={s.field}>콘텐츠 수량<select aria-label="콘텐츠 수량" value={input.quantity} onChange={(event) => set("quantity",Number(event.target.value))}>{Array.from({ length:10 },(_,index) => <option key={index} value={index + 1}>{index + 1}편</option>)}</select></label>
         </div>
         <p className={s.note} id="budget-size-help">0~100만 명을 입력하세요. 특정 채널의 현재 구독자 수가 아니라 직접 정하는 기획 조건입니다.</p>
-        <label className={s.field}>콘텐츠 사용 범위<select value={input.usage} onChange={(event) => set("usage",event.target.value as BudgetInput["usage"])}>{Object.entries(USAGE_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+        <label className={s.field}>콘텐츠 사용 범위<select aria-label="콘텐츠 사용 범위" value={input.usage} onChange={(event) => set("usage",event.target.value as BudgetInput["usage"])}>{Object.entries(USAGE_LABELS).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <details className={s.formula}><summary>산정 기준 보기</summary><p>모델: planning-2026-09-v1. 초기 예산 기획용으로 직접 정한 a·b에 분야, 사용 범위, 수량을 반영합니다. 시장 거래 자료나 YouTube API 통계에서 학습한 가격이 아닙니다.</p>{result && <p>기본식: ({result.baseA} × {size} + {formatWon(result.baseB)}) × 분야 {result.categoryFactor} × 사용 범위 {result.usageFactor} × {input.quantity}편. 원 단위 반올림.</p>}<p>단순 기획 계산에는 배송비·출장비·독점 조건·수정 횟수·사용권 기간에 따른 추가 비용을 넣지 않았습니다. 문의 내용에 필요한 범위를 적어 주세요.</p></details>
         <p className={s.note}>직접 a·b를 입력하거나 거래 자료로 보정하려면 <Link className={s.textLink} href="/rate-studio">상세 계산 도구</Link>를 이용하세요.</p>
       </section>

@@ -1,0 +1,54 @@
+name: Netlify customer acquisition release
+on:
+  pull_request:
+    paths: ['.github/workflows/netlify-growth-deploy.yml']
+permissions:
+  contents: read
+concurrency:
+  group: netlify-growth-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  deploy:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      REVIEW_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck && pnpm lint && pnpm test
+      - run: pnpm exec vite build --config review/vite.config.ts
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: node scripts/verify-static-review.mjs
+      - run: node scripts/netlify-handoff.mjs prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: netlify-deploy-key-${{ github.run_id }}
+          path: deploy-public-key/
+          retention-days: 1
+      - name: Consume scoped encrypted deployment grant
+        run: node scripts/netlify-handoff.mjs deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netlify-release-result-${{ github.run_id }}
+          path: netlify-deployment-result.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netlify-release-qa-${{ github.run_id }}
+          path: test-results/static-review/
+          retention-days: 7
