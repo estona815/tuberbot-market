@@ -1,0 +1,33 @@
+name: Customer acquisition public QA
+on:
+  pull_request:
+    paths: ['scripts/verify-acquisition-public.mjs','.github/workflows/acquisition-public.yml']
+permissions:
+  contents: read
+concurrency:
+  group: acquisition-public-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      REVIEW_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: node scripts/verify-acquisition-public.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acquisition-public-${{ github.run_id }}
+          path: test-results/acquisition-public/
+          retention-days: 14
