@@ -1,8 +1,9 @@
 name: Public deployment smoke
 on:
-  push:
-    branches: ['codex/ad-rate-release-20260905']
   pull_request:
+    paths:
+      - 'scripts/verify-public-deployment.mjs'
+      - '.github/workflows/public-smoke.yml'
 permissions:
   contents: read
 concurrency:

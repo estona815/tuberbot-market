@@ -1,37 +1,12 @@
 name: Hosting diagnostics
 on:
-  pull_request:
-    paths: ['.github/workflows/hosting-check.yml']
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  hosts:
+  host:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 2
     steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - name: Inspect public production domains without credentials
-        run: |
-          node --input-type=module <<'JS'
-          import { writeFile } from 'node:fs/promises';
-          const urls = [
-            'https://tuberbot-build-check.vercel.app/status.json',
-            'https://tuberbot-market-review.vercel.app/release.json',
-            'https://tuberbot-review.vercel.app/release.json'
-          ];
-          const result = await Promise.all(urls.map(async url => {
-            try {
-              const response = await fetch(url, { redirect:'manual', signal: AbortSignal.timeout(20000) });
-              return { url, status: response.status, location: response.headers.get('location'), body: (await response.text()).slice(0,4000) };
-            } catch(error) { return { url, error: String(error) }; }
-          }));
-          console.log(JSON.stringify(result,null,2));
-          await writeFile('hosting-status.json', JSON.stringify(result,null,2));
-          JS
-      - uses: actions/upload-artifact@v4
-        with:
-          name: hosting-diagnostics-${{ github.sha }}
-          path: hosting-status.json
-          retention-days: 7
+      - name: Check the public review release
+        run: curl --fail --silent --show-error https://tuberbot-review.vercel.app/release.json
