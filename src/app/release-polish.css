@@ -1,0 +1,5 @@
+/* Preserve the established layout while preventing Korean words from splitting in the release copy. */
+.home-demo-band h2 { font-size: clamp(24px, 2.05vw, 33px); line-height: 1.5; word-break: keep-all; overflow-wrap: break-word; letter-spacing: -.9px; }
+.home-demo-band__facts { line-height: 1.8; }
+@media (max-width: 760px) { .home-demo-band h2 { font-size: 26px; } }
+@media print { .site-header, .skip-link, .site-footer { display: none !important; } }

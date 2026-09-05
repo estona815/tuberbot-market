@@ -1,0 +1,56 @@
+name: Static public review bundle
+on:
+  pull_request:
+    paths:
+      - 'review/**'
+      - 'src/**'
+      - 'scripts/verify-static-review.mjs'
+      - 'scripts/publish-review-assets.mjs'
+      - '.github/workflows/static-review.yml'
+permissions:
+  contents: read
+concurrency:
+  group: static-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-review:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      REVIEW_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm exec vite build --config review/vite.config.ts
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: node scripts/verify-static-review.mjs
+      - name: Publish only tested public assets to an isolated branch
+        run: node scripts/publish-review-assets.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: review-publication-${{ github.event.pull_request.head.sha }}
+          path: |
+            review-publication.json
+            dist/public-review/
+          retention-days: 14
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-review-evidence-${{ github.event.pull_request.head.sha }}
+          path: test-results/static-review/
+          retention-days: 14

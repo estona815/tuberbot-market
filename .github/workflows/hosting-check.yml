@@ -1,0 +1,12 @@
+name: Hosting diagnostics
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check the public review release
+        run: curl --fail --silent --show-error https://tuberbot-review.vercel.app/release.json
