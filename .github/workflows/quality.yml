@@ -41,6 +41,18 @@ jobs:
       - run: pnpm db:check
       - run: pnpm sandbox:verify
       - run: pnpm build
+      - name: Portable server package
+        run: |
+          cp -R public .next/standalone/public
+          mkdir -p .next/standalone/.next
+          cp -R .next/static .next/standalone/.next/static
+          find .next/standalone -name '.env*' -type f -delete
+          tar -czf tuberbot-server.tar.gz -C .next/standalone .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tuberbot-server-${{ github.sha }}
+          path: tuberbot-server.tar.gz
+          retention-days: 14
       - run: pnpm build:rate-preview
       - name: Browser setup
         run: pnpm exec playwright install --with-deps chromium

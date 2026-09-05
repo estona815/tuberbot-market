@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+.git
+.github
+.openai
+.vercel
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+*.zip
+*.log
