@@ -10,21 +10,20 @@ async function fillScenario(page: Page) {
   await page.getByLabel("계수 근거", { exact: true }).fill("합성 브라우저 검증 자료");
   await page.getByLabel("참고 범위 ± %", { exact: true }).fill("10");
 }
+const studioAlert = (page: Page) => page.locator("main#main-content").getByRole("alert");
 
 test("calculator starts empty, calculates exact money, clears stale results and exports", async ({ page }, testInfo) => {
   const errors: string[] = [];
   const outbound: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/rate-studio");
-  page.on("request", (request) => {
-    if (["fetch", "xhr"].includes(request.resourceType())) outbound.push(request.url());
-  });
+  page.on("request", (request) => { if (["fetch", "xhr"].includes(request.resourceType())) outbound.push(request.url()); });
   await expect(page.getByRole("heading", { name: "광고비 산정 워크스페이스" })).toBeVisible();
   await expect(page.getByTestId("estimated-amount")).toHaveCount(0);
   await expect(page.getByLabel("계수 a · 원 / 구독자 1명", { exact: true })).toHaveValue("");
   await page.screenshot({ path: testInfo.outputPath("rate-studio-empty.png"), fullPage: true });
   await page.getByRole("button", { name: "계산하기", exact: true }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(studioAlert(page)).toBeVisible();
   await fillScenario(page);
   await page.getByRole("button", { name: "계산하기", exact: true }).click();
   await expect(page.getByTestId("estimated-amount")).toHaveText("350,000원");
@@ -93,7 +92,7 @@ test("bad files fail atomically, text is escaped and page stays within the viewp
   await page.getByRole("button", { name: "거래 내역으로 보정", exact: true }).click();
   await page.getByLabel("거래 자료 근거", { exact: true }).fill("검증");
   await page.getByLabel("거래 CSV 불러오기", { exact: true }).setInputFiles({ name: "bad.csv", mimeType: "text/csv", buffer: Buffer.from(`${CSV}부족,shorts,10,10`) });
-  await expect(page.getByRole("alert")).toContainText("최소 3건");
+  await expect(studioAlert(page)).toContainText("최소 3건");
   await expect(page.getByRole("button", { name: "확인한 계수표에 반영", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "직접 입력", exact: true }).click();
   await fillScenario(page);
