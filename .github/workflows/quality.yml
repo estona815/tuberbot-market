@@ -1,0 +1,56 @@
+name: Release quality
+on:
+  pull_request:
+  push:
+    branches: [main, 'codex/ad-rate-release-20260905']
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      ENABLE_LIVE_PAYMENTS: 'false'
+      ENABLE_PAYOUTS: 'false'
+      ENABLE_SAFE_PAYMENT_BADGE: 'false'
+      ENABLE_ESTIMATED_AD_RATE: 'false'
+      ENABLE_ESTIMATED_CPV: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Archive exact source revision
+        run: git archive --format=zip --output=tuberbot-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tuberbot-source-${{ github.sha }}
+          path: tuberbot-source.zip
+          retention-days: 7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm db:check
+      - run: pnpm sandbox:verify
+      - run: pnpm build
+      - name: Browser setup
+        run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - name: Browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
