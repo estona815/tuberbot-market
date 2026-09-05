@@ -1,129 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowIcon,
-  ContractIcon,
-  LockIcon,
-  MessageIcon,
-  SearchIcon,
-  ShieldIcon,
-  UploadIcon,
-} from "@/components/icons";
-import {
-  featuredLegacyCreators,
-  formatCreatorCount,
-  formatLegacyKrw,
-} from "@/lib/creator-data";
-
-const dealStages = [
-  { label: "제안", detail: "광고주가 금액·납기·사용권을 제안합니다.", icon: MessageIcon },
-  { label: "역제안", detail: "유튜버가 같은 항목으로 조건을 답합니다.", icon: ArrowIcon },
-  { label: "계약", detail: "양측이 동일한 버전을 각각 수락합니다.", icon: ContractIcon },
-  { label: "샌드박스 결제", detail: "외부 PG 승인 전에는 실제 청구가 없습니다.", icon: LockIcon },
-  { label: "제작·검수", detail: "초안, 수정, 승인과 게시 기록을 남깁니다.", icon: UploadIcon },
+import { ArrowIcon, ContractIcon, LockIcon, MessageIcon, SearchIcon, ShieldIcon, UploadIcon } from "@/components/icons";
+import { featuredLegacyCreators, formatCreatorCount } from "@/lib/creator-data";
+const stages = [
+  { label: "제안·역제안", detail: "금액·납기·수정 횟수·사용권을 함께 정합니다.", icon: MessageIcon },
+  { label: "양측 합의", detail: "같은 조건 버전을 각각 수락합니다.", icon: ArrowIcon },
+  { label: "계약 기록", detail: "합의 조건과 내용 해시를 고정합니다.", icon: ContractIcon },
+  { label: "제작·검수", detail: "초안, 수정, 승인과 게시 링크를 기록합니다.", icon: UploadIcon },
+  { label: "정산 준비", detail: "실제 청구·지급 전 연결 상태를 확인합니다.", icon: LockIcon },
 ] as const;
-
 export default function HomePage() {
-  return (
-    <>
-      <section className="home-v2">
-        <div className="home-v2__copy">
-          <p className="home-v2__eyebrow">CREATOR COMMERCE · KOREA</p>
-          <h1>유튜버를 찾고,<br />조건을 합의하고,<br />제작까지 한곳에서.</h1>
-          <p className="home-v2__lead">
-            원래 튜버봇의 채널 탐색은 그대로 살리고, 제안·역제안·계약·콘텐츠 검수를 하나의 기록으로 연결했습니다.
-          </p>
-
-          <form action="/search" className="home-v2__search">
-            <SearchIcon size={22} />
-            <label className="sr-only" htmlFor="home-creator-search">유튜버 검색</label>
-            <input id="home-creator-search" name="q" placeholder="채널명, 카테고리, 키워드로 검색" />
-            <button aria-label="유튜버 검색" type="submit"><ArrowIcon /></button>
-          </form>
-
-          <div className="home-v2__paths">
-            <Link className="home-path home-path--primary" href="/search">
-              <span><SearchIcon size={26} /></span>
-              <div><strong>유튜버 탐색</strong><small>원본 채널 정보와 출처 확인</small></div>
-              <ArrowIcon />
-            </Link>
-            <Link className="home-path" href="/market">
-              <span><ContractIcon size={26} /></span>
-              <div><strong>광고 상품</strong><small>유튜버 확정 단가 상품만 분리</small></div>
-              <ArrowIcon />
-            </Link>
-          </div>
-
-          <p className="home-v2__boundary"><ShieldIcon size={18} /> 공개 결제는 샌드박스 · 실제 청구와 지급 없음</p>
-        </div>
-
-        <aside className="home-deal-card" aria-label="광고 거래 흐름 미리보기">
-          <div className="home-deal-card__head">
-            <div><p>거래 흐름</p><h2>조건이 바뀔 때마다<br />기록이 남습니다.</h2></div>
-            <span>SANDBOX</span>
-          </div>
-          <ol className="home-deal-card__steps">
-            {dealStages.map(({ label, detail, icon: Icon }, index) => (
-              <li key={label}>
-                <span className="home-deal-card__icon"><Icon size={20} /></span>
-                <div><strong>{label}</strong><small>{detail}</small></div>
-                <b>{String(index + 1).padStart(2, "0")}</b>
-              </li>
-            ))}
-          </ol>
-          <div className="home-deal-card__foot">
-            <p><LockIcon size={16} /> 실제 상대방·결제사와 연결되지 않는 공개 데모입니다.</p>
-            <Link href="/deal-demo">전체 흐름 체험 <ArrowIcon size={17} /></Link>
-          </div>
-        </aside>
-      </section>
-
-      <section className="legacy-restore">
-        <header className="legacy-restore__head">
-          <div><p>ORIGINAL DATA RESTORED</p><h2>처음 제공된 유튜버 정보를 복원했습니다.</h2></div>
-          <Link href="/search">전체 유튜버 보기 <ArrowIcon size={17} /></Link>
-        </header>
-
-        <div className="legacy-restore__list">
-          {featuredLegacyCreators.map((creator) => {
-            const price = creator.priceProvenance.access === "PUBLIC_AT_SOURCE"
-              ? formatLegacyKrw(creator.priceProvenance.legacyEstimatedPriceKrw)
-              : "원본에서 로그인 필요";
-            return (
-              <Link className="legacy-restore__row" href={`/channel/${creator.legacyId}`} key={creator.legacyId}>
-                <div className="legacy-restore__identity">
-                  {creator.imageUrl ? <Image alt={`${creator.name} 채널 이미지`} height={56} src={creator.imageUrl} unoptimized width={56} /> : null}
-                  <div><strong>{creator.name}</strong><span>DISCOVERY ONLY · 미입점</span></div>
-                </div>
-                <div className="legacy-restore__category"><small>카테고리</small><span>{creator.categories.join(" · ")}</span></div>
-                <div><small>구독자</small><strong>{formatCreatorCount(creator.subscriberCount)}</strong></div>
-                <div className="legacy-restore__price"><small>원본 예상 광고 단가</small><strong>{price}</strong></div>
-                <div className="legacy-restore__source"><small>원본 공개값 확인</small><span>2026.08.02 · 거래가 아님</span></div>
-                <ArrowIcon />
-              </Link>
-            );
-          })}
-        </div>
-
-        <p className="legacy-restore__notice">
-          <ShieldIcon size={20} />
-          위 금액은 원본 사이트가 “예상 광고 단가”로 공개한 과거 표시값을 읽기 전용으로 보존한 것입니다. 유튜버가 직접 확정한 판매가가 아니며, 채널 소유·판매자 인증과 상품 단가 확인 전에는 제안·결제가 열리지 않습니다.
-        </p>
-      </section>
-
-      <section className="home-demo-band">
-        <div>
-          <p>WORKING PRODUCT DEMO</p>
-          <h2>사장님께 보여줄 수 있게,<br />거래 전 과정을 직접 눌러보세요.</h2>
-        </div>
-        <div className="home-demo-band__facts">
-          <span>제안 v1 → 역제안 v2</span>
-          <span>양측 개별 수락 → 계약 해시</span>
-          <span>간편결제 선택 → 샌드박스 승인</span>
-          <span>초안 → 수정 → 승인 → 정산 차단</span>
-        </div>
-        <Link className="button" href="/deal-demo">거래 데모 시작 <ArrowIcon /></Link>
-      </section>
-    </>
-  );
+  return <>
+    <section className="home-v2"><div className="home-v2__copy"><p className="home-v2__eyebrow">TUBERBOT · CREATOR COLLABORATION</p><h1>유튜버를 찾고,<br />조건을 합의하고,<br />제작까지 한곳에서.</h1><p className="home-v2__lead">광고비 산정부터 조건 협의, 계약 검토본, 콘텐츠 검수와 정산 준비까지. 캠페인마다 필요한 내용을 하나의 작업방에 모았습니다.</p><form action="/search" className="home-v2__search"><SearchIcon size={22} /><label className="sr-only" htmlFor="home-creator-search">유튜버 검색</label><input id="home-creator-search" name="q" placeholder="채널명, 카테고리, 키워드로 검색" /><button aria-label="유튜버 검색" type="submit"><ArrowIcon /></button></form><div className="home-v2__paths"><Link className="home-path home-path--primary" href="/workspace"><span><ContractIcon size={26} /></span><div><strong>광고 협업 시작</strong><small>내 조건으로 직접 캠페인 작성</small></div><ArrowIcon /></Link><Link className="home-path" href="/rate-studio"><span><SearchIcon size={26} /></span><div><strong>광고비 계산</strong><small>계수 입력·거래 자료 보정</small></div><ArrowIcon /></Link></div><p className="home-v2__boundary"><ShieldIcon size={18} /> 공개 검토판 · 실제 상대방 전송·청구·지급 없음</p></div><aside className="home-deal-card" aria-label="광고 협업 흐름"><div className="home-deal-card__head"><div><p>캠페인 워크스페이스</p><h2>조건은 명확하게,<br />기록은 끝까지.</h2></div><span>REVIEW</span></div><ol className="home-deal-card__steps">{stages.map(({ label, detail, icon: Icon },index) => <li key={label}><span className="home-deal-card__icon"><Icon size={20} /></span><div><strong>{label}</strong><small>{detail}</small></div><b>{String(index+1).padStart(2,"0")}</b></li>)}</ol><div className="home-deal-card__foot"><p><LockIcon size={16} /> 검토 작업은 브라우저에 저장되며 파일로 보관할 수 있습니다.</p><Link href="/workspace">전체 흐름 직접 사용 <ArrowIcon size={17} /></Link></div></aside></section>
+    <section className="legacy-restore"><header className="legacy-restore__head"><div><p>CHANNEL DISCOVERY</p><h2>채널을 살펴보고, 협업을 준비하세요.</h2></div><Link href="/search">전체 유튜버 보기 <ArrowIcon size={17} /></Link></header><div className="legacy-restore__list">{featuredLegacyCreators.map((creator) => <Link className="legacy-restore__row" href={`/channel/${creator.legacyId}`} key={creator.legacyId}><div className="legacy-restore__identity">{creator.imageUrl && <Image alt={`${creator.name} 채널 이미지`} height={56} src={creator.imageUrl} unoptimized width={56} />}<div><strong>{creator.name}</strong><span>보관된 채널 · 미입점</span></div></div><div className="legacy-restore__category"><small>카테고리</small><span>{creator.categories.join(" · ")}</span></div><div><small>과거 구독자 표시</small><strong>{formatCreatorCount(creator.subscriberCount)}</strong></div><div className="legacy-restore__price"><small>광고비</small><strong>별도 협의 필요</strong></div><div className="legacy-restore__source"><small>보관 자료 확인일</small><span>2026.08.02 · 실시간 아님</span></div><ArrowIcon /></Link>)}</div><p className="legacy-restore__notice"><ShieldIcon size={20} /> 기존 튜버봇에 보관된 채널 탐색 자료입니다. 현재 지표·판매자 인증·입점·광고 수락을 의미하지 않습니다. 출처와 현재 정보는 채널 페이지에서 확인하세요.</p></section>
+    <section className="home-demo-band"><div><p>ONE WORKSPACE</p><h2>브랜디드·PPL·오프라인·제휴,<br />협의해야 할 조건은 빠짐없이.</h2></div><div className="home-demo-band__facts"><span>직접 입력한 제안과 역제안</span><span>사용권·납기·수정 횟수 명시</span><span>검수부터 정산 준비까지 기록</span><span>파일 보관·복원과 분쟁 보류</span></div><Link className="button" href="/workspace">캠페인 작성 <ArrowIcon /></Link></section>
+    <section className="page-shell"><div className="campaign-note"><ShieldIcon /><div><strong>실제 운영 연결은 따로 확인합니다.</strong><p>Google 로그인·공식 YouTube 조회·서버 협업은 운영 연결 후 사용합니다. 실제 결제와 지급은 이 검토판에서 제공하지 않습니다.</p><Link href="/launch">운영 연결 현황 확인 →</Link></div></div></section>
+  </>;
 }
