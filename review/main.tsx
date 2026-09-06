@@ -20,6 +20,7 @@ import { CustomerDirectory } from "../src/components/acquisition/creator-directo
 import { BudgetCalculator } from "../src/components/acquisition/budget-calculator";
 import { InquiryPage, InquiryPrivacyPage } from "../src/components/acquisition/inquiry";
 import { CustomerGuide } from "../src/components/acquisition/site-chrome";
+import { ChannelDataStatusPage } from "../src/components/channels/channel-data-ui";
 import Link from "./browser-link";
 import { useRoute } from "./browser-navigation";
 import "../src/app/globals.css";
@@ -38,6 +39,7 @@ function Page({ route }: { route:string }) {
   const url=new URL(route,"https://tuberbot-review.netlify.app"), path=url.pathname.replace(/\/$/u,"") || "/";
   if (path === "/") return <Home />;
   if (path === "/budget") return <BudgetCalculator />;
+  if (path === "/data-status") return <ChannelDataStatusPage />;
   if (path === "/inquiry") return <InquiryPage />;
   if (["/inquiry-privacy","/privacy"].includes(path)) return <InquiryPrivacyPage />;
   if (["/guide","/how-it-works"].includes(path)) return <CustomerGuide />;

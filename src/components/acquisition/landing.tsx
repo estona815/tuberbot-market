@@ -4,6 +4,7 @@ import { campaignBudget, budgetQuery, DEFAULT_BUDGET, type BudgetInput } from "@
 import { BudgetHero } from "./budget-calculator";
 import { featuredLegacyCreators } from "@/lib/creator-data";
 import { CreatorTile } from "./creator-directory";
+import { ChannelUpdateNotice } from "@/components/channels/channel-data-ui";
 import { FormatIcon } from "./format-icon";
 import s from "./presentation.module.css";
 
@@ -25,7 +26,7 @@ export function AcquisitionLanding() {
       <BudgetHero />
     </section><div className={s.miniFacts}><span><strong>조건을 바꾸면</strong> 예산도 바로 계산</span><span><strong>관심 채널과 함께</strong> 문의 내용 정리</span><span><strong>제작 범위까지</strong> 한 번에 기획</span></div></div>
     <section className={`${s.wrap} ${s.section}`}><header className={s.sectionHead}><div><h2>어떤 콘텐츠를 만들까요?</h2><p>형식별 기획 예산을 비교하고, 브랜드 조건으로 조정하세요.</p></div><Link className={s.textLink} href="/budget">전체 조건 설정 <ArrowIcon size={15} /></Link></header><CampaignPlans /></section>
-    <div className={s.tinted}><section className={`${s.wrap} ${s.section}`}><header className={s.sectionHead}><div><h2>브랜드에 맞는 채널을 찾아보세요.</h2><p>음식부터 지식 콘텐츠까지, 관심 채널을 문의에 담을 수 있습니다.</p></div><Link className={s.textLink} href="/search">유튜버 전체 보기 <ArrowIcon size={15} /></Link></header><div className={s.creatorGrid}>{featuredLegacyCreators.map((creator) => <CreatorTile key={creator.legacyId} creator={creator} />)}</div><p className={s.note}>채널 탐색용 자료 · 2026.08.02 확인 자료 기준 · 목록 노출은 제휴·입점·섭외 확정을 뜻하지 않습니다.</p></section></div>
+    <div className={s.tinted}><section className={`${s.wrap} ${s.section}`}><header className={s.sectionHead}><div><h2>브랜드에 맞는 채널을 찾아보세요.</h2><p>음식부터 지식 콘텐츠까지, 관심 채널을 문의에 담을 수 있습니다.</p></div><Link className={s.textLink} href="/search">유튜버 전체 보기 <ArrowIcon size={15} /></Link></header><div className={s.creatorGrid}>{featuredLegacyCreators.map((creator) => <CreatorTile key={creator.legacyId} creator={creator} />)}</div><ChannelUpdateNotice /><p className={s.note}>채널별 확인 시각과 출처를 표시합니다. 목록 노출은 제휴·입점·섭외 확정을 뜻하지 않습니다.</p></section></div>
     <section className={`${s.wrap} ${s.section}`}><h2>광고 준비는, 세 단계로.</h2><div className={s.steps}>{[
       ["01","예산과 형식 정하기","희망 규모와 콘텐츠 수량을 바꿔보며 기획안을 만드세요."],
       ["02","관심 채널과 문의 남기기","브랜드와 캠페인 목표를 적어 튜버봇 운영팀에 전달하세요."],

@@ -17,8 +17,8 @@ function Bookmark() {
   return <svg aria-hidden="true" width="17" height="19" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 2h10a1.5 1.5 0 0 1 1.5 1.5V20L10 16l-6.5 4V3.5A1.5 1.5 0 0 1 5 2Z" /></svg>;
 }
 export function CreatorTile({ creator }: { creator: LegacyCreator }) {
-  const { catalog } = useChannelCatalog();
-  const record = usableRecord(catalog?.records.find((item) => item.youtubeId === creator.youtubeId));
+  const { catalog, nowMs } = useChannelCatalog();
+  const record = usableRecord(catalog?.records.find((item) => item.youtubeId === creator.youtubeId), nowMs);
   const displayed = record?.data ? { ...creator, name: record.data.title, imageUrl: record.data.thumbnailUrl } : creator;
   const shortlist = useShortlist();
   const saved = shortlist.ids.includes(creator.legacyId);
@@ -31,14 +31,14 @@ export function CreatorTile({ creator }: { creator: LegacyCreator }) {
   </article>;
 }
 export function CustomerDirectory({ initialQuery="" }: { initialQuery?: string }) {
-  const { catalog } = useChannelCatalog();
+  const { catalog, nowMs } = useChannelCatalog();
   const [query,setQuery] = useState(initialQuery), [category,setCategory] = useState("전체"), [sort,setSort] = useState("default");
   const shortlist = useShortlist();
   const [savedOnly,setSavedOnly] = useState(false);
   const deferred = useDeferredValue(query.trim().toLocaleLowerCase("ko-KR"));
   const categories = ["전체",...new Set(legacyCreators.flatMap((creator) => [...creator.categories]))];
   const matches = useMemo(() => {
-    const records = new Map(catalog?.records.map((record) => [record.youtubeId,usableRecord(record)]) ?? []);
+    const records = new Map(catalog?.records.map((record) => [record.youtubeId,usableRecord(record, nowMs)]) ?? []);
     const data = legacyCreators.filter((creator) => (!savedOnly || shortlist.ids.includes(creator.legacyId)) && (category === "전체" || creator.categories.includes(category)) && [records.get(creator.youtubeId)?.data?.title ?? creator.name,creator.name,creator.handle ?? "",creator.youtubeId,...creator.categories].some((value) => value.toLocaleLowerCase("ko-KR").includes(deferred)));
     if (sort === "name") data.sort((a,b) => (records.get(a.youtubeId)?.data?.title ?? a.name).localeCompare(records.get(b.youtubeId)?.data?.title ?? b.name,"ko"));
     if (sort === "subscribers") {
@@ -46,7 +46,7 @@ export function CustomerDirectory({ initialQuery="" }: { initialQuery?: string }
       data.sort((a,b) => { const left=subscribers(a),right=subscribers(b); return right > left ? 1 : right < left ? -1 : 0; });
     }
     return data;
-  },[deferred,category,sort,savedOnly,shortlist.ids,catalog]);
+  },[deferred,category,sort,savedOnly,shortlist.ids,catalog,nowMs]);
   return <div className={s.scope} data-testid="customer-directory"><div className={s.wrap}>
     <header className={s.title}><h1>브랜드에 맞는 유튜버 찾기</h1><p>채널을 둘러보고, 관심 있는 채널을 광고 문의에 담아보세요.</p></header>
     <div className={s.directoryTools}><label className={s.search}><SearchIcon size={20} /><span className="sr-only">채널 검색</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} maxLength={120} placeholder="채널명·카테고리·YouTube ID" /></label><button type="button" className={s.shortlistFilter} aria-pressed={savedOnly} onClick={() => setSavedOnly(!savedOnly)}><Bookmark />저장한 채널 {shortlist.ids.length}</button><label className={s.sort}>정렬<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="default">기본 순서</option><option value="subscribers">구독자 기록순</option><option value="name">이름순</option></select></label></div>
@@ -59,8 +59,8 @@ export function CustomerDirectory({ initialQuery="" }: { initialQuery?: string }
   </div></div>;
 }
 export function CustomerProfile({ creator }: { creator: LegacyCreator }) {
-  const { catalog } = useChannelCatalog(creator.youtubeId);
-  const record = usableRecord(catalog?.records.find((item) => item.youtubeId === creator.youtubeId));
+  const { catalog, nowMs } = useChannelCatalog(creator.youtubeId);
+  const record = usableRecord(catalog?.records.find((item) => item.youtubeId === creator.youtubeId), nowMs);
   const displayed = record?.data ? { ...creator,name:record.data.title,imageUrl:record.data.thumbnailUrl } : creator;
   return <div className={s.scope}><div className={s.wrap}>
     <div className={s.title}><Link className={s.textLink} href="/search">← 채널 목록으로</Link></div>
