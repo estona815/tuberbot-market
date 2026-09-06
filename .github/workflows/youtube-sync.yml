@@ -27,8 +27,8 @@ jobs:
       - uses: pnpm/action-setup@v4
       - name: Complete bounded UI integration
         run: if [ -f .ops/apply-channel-ui.mjs ]; then node .ops/apply-channel-ui.mjs; rm .ops/apply-channel-ui.mjs; fi
-      - name: Resolve official SDKs into exact dependency and lockfile versions
-        run: pnpm add -E @netlify/blobs @netlify/functions
+      - name: Resolve reviewed SDK versions into the lockfile
+        run: pnpm add -E @netlify/blobs@11.0.3 @netlify/functions@6.0.0
       - run: pnpm typecheck && pnpm lint && pnpm test
       - run: pnpm db:check && pnpm sandbox:verify
       - run: pnpm build
@@ -38,7 +38,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src review .env.example package.json pnpm-lock.yaml .ops
+          git add src review netlify .env.example package.json pnpm-lock.yaml .ops
           if ! git diff --cached --quiet; then git commit -m 'feat: bind channel updates and pinned SDKs [verified-source]'; git push origin HEAD:codex/youtube-sync-20260906; fi
           echo "REVIEW_SOURCE_REVISION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - run: pnpm exec vite build --config review/vite.config.ts

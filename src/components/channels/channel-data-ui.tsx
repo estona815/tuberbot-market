@@ -3,9 +3,10 @@ import Link from "next/link";
 import { CHANNEL_RETENTION_MS, displayYouTubeCount, type ChannelRecord } from "@/domain/channel-snapshot";
 import { useChannelCatalog, refreshChannelCatalog } from "./use-channel-catalog";
 import s from "./channel-data.module.css";
-export function usableRecord(record: ChannelRecord | undefined) {
+/** Pure projection using the shared external-store clock, advanced only by events. */
+export function usableRecord(record: ChannelRecord | undefined, nowMs: number) {
   if (!record) return undefined;
-  const age = Date.now() - Date.parse(record.observedAt);
+  const age = nowMs - Date.parse(record.observedAt);
   if (record.state === "AVAILABLE" && (age >= CHANNEL_RETENTION_MS || age < -60_000)) return { ...record, state: "EXPIRED" as const, data: null };
   return record;
 }
@@ -13,20 +14,22 @@ export function checkedTime(value: string) {
   return new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 export function ChannelRecordLabel({ record }: { record?: ChannelRecord }) {
-  const safe = usableRecord(record);
+  const { nowMs } = useChannelCatalog();
+  const safe = usableRecord(record, nowMs);
   if (!safe) return <span className={s.stamp}>보관 자료 · 2026.08.02 확인</span>;
-  return <span className={s.stamp} data-testid="channel-checked-at">YouTube · {checkedTime(safe.observedAt)} 확인 (KST){safe.state === "EXPIRED" ? " · 정보 만료" : safe.state === "UNAVAILABLE" ? " · 조회 불가" : Date.now() - Date.parse(safe.observedAt) >= 24 * 60 * 60_000 ? " · 갱신 지연" : ""}</span>;
+  const delayed = nowMs - Date.parse(safe.observedAt) >= 24 * 60 * 60_000;
+  return <span className={s.stamp} data-testid="channel-checked-at">YouTube · {checkedTime(safe.observedAt)} 확인 (KST){safe.state === "EXPIRED" ? " · 정보 만료" : safe.state === "UNAVAILABLE" ? " · 조회 불가" : delayed ? " · 갱신 지연" : ""}</span>;
 }
 export function ChannelUpdateNotice() {
   const { catalog, loading, failed } = useChannelCatalog();
   const text = !catalog ? loading ? "채널 정보 확인 중" : "보관 자료 표시" : !catalog.configured ? "보관 자료 표시 · 자동 갱신 연결 대기" : catalog.lastCompleteAt ? `전체 갱신 ${checkedTime(catalog.lastCompleteAt)} (KST)${catalog.status === "DEGRADED" || failed ? " · 재확인 대기" : ""}` : "첫 데이터 갱신 대기";
   return <p className={s.notice}><span>{text}</span><Link href="/data-status">업데이트 안내</Link></p>;
 }
+/** Callers pass a retention-filtered record. Missing API data never silently becomes zero. */
 export function apiMetric(record: ChannelRecord | undefined, name: "subscriberCount" | "videoCount" | "viewCount", archived: number | null): string {
-  const safe = usableRecord(record);
-  if (!safe) return archived === null ? "자료 없음" : archived.toLocaleString("ko-KR");
-  if (safe.state !== "AVAILABLE" || !safe.data) return "정보 확인 대기";
-  return displayYouTubeCount(safe.data[name]);
+  if (!record) return archived === null ? "자료 없음" : archived.toLocaleString("ko-KR");
+  if (record.state !== "AVAILABLE" || !record.data) return "정보 확인 대기";
+  return displayYouTubeCount(record.data[name]);
 }
 export function ChannelDataStatusPage() {
   const { catalog, loading, failed } = useChannelCatalog();
