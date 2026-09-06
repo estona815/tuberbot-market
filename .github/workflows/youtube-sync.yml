@@ -1,0 +1,81 @@
+name: YouTube channel synchronization release
+on:
+  push:
+    branches: ['codex/youtube-sync-20260906']
+permissions:
+  contents: write
+concurrency:
+  group: youtube-sync-release
+  cancel-in-progress: true
+jobs:
+  release:
+    if: "!contains(github.event.head_commit.message, '[verified-source]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      ENABLE_LIVE_PAYMENTS: 'false'
+      ENABLE_PAYOUTS: 'false'
+      YOUTUBE_SYNC_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/youtube-sync-20260906
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+      - name: Complete bounded UI integration
+        run: if [ -f .ops/apply-channel-ui.mjs ]; then node .ops/apply-channel-ui.mjs; rm .ops/apply-channel-ui.mjs; fi
+      - name: Resolve official SDKs into exact dependency and lockfile versions
+        run: pnpm add -E @netlify/blobs @netlify/functions
+      - run: pnpm typecheck && pnpm lint && pnpm test
+      - run: pnpm db:check && pnpm sandbox:verify
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - name: Record validated source and exact SDK versions
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src review .env.example package.json pnpm-lock.yaml .ops
+          if ! git diff --cached --quiet; then git commit -m 'feat: bind channel updates and pinned SDKs [verified-source]'; git push origin HEAD:codex/youtube-sync-20260906; fi
+          echo "REVIEW_SOURCE_REVISION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - run: pnpm exec vite build --config review/vite.config.ts
+      - run: pnpm exec tsx scripts/verify-channel-sync-ui.mjs
+      - run: node scripts/verify-quality-v4.mjs
+      - name: Prepare source archive
+        run: git archive --format=zip --output=tuberbot-youtube-sync-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: youtube-sync-ready-${{ github.run_id }}
+          path: |
+            tuberbot-youtube-sync-source.zip
+            test-results/channel-sync/
+            test-results/quality-v4/
+          retention-days: 7
+      - run: node scripts/netlify-handoff.mjs prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: netlify-sync-key-${{ github.run_id }}
+          path: deploy-public-key/
+          retention-days: 1
+      - name: Deploy with provider-scoped encrypted permission
+        run: node scripts/netlify-handoff.mjs deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Verify actual public server endpoint and screens
+        run: pnpm exec tsx scripts/verify-channel-sync-ui.mjs
+        env:
+          PUBLIC_QA_LIVE: 'true'
+          QA_OUTPUT: test-results/channel-sync-live
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-sync-evidence-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+            netlify-deployment-result.json
+          if-no-files-found: ignore
+          retention-days: 7

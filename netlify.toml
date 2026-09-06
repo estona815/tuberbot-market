@@ -1,0 +1,7 @@
+[build]
+  command = "pnpm exec vite build --config review/vite.config.ts"
+  publish = "dist/public-review"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
