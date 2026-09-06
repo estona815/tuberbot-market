@@ -10,7 +10,10 @@ export function createChannelService(context: Context): ChannelSyncService {
   const storage: ChannelStore = {
     async read() {
       const saved = await store.getWithMetadata("snapshot", { type: "json", consistency: "strong" });
-      return saved ? { value: saved.data, etag: saved.etag } : null;
+      if (!saved) return null;
+      // Never downgrade an existing record to an unconditional write if the SDK omits its ETag.
+      if (typeof saved.etag !== "string" || !saved.etag) throw new Error("STORAGE_ETAG_REQUIRED");
+      return { value: saved.data, etag: saved.etag };
     },
     async compareAndSet(value, etag) {
       const result = await store.setJSON("snapshot", value, etag ? { onlyIfMatch: etag } : { onlyIfNew: true });
